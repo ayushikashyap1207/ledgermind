@@ -2,7 +2,7 @@
 
 **A hybrid enterprise financial agent that answers natural-language questions by reasoning over both unstructured documents (10-Ks, earnings calls, invoices, policy docs) and structured data (a transactional ledger/database) — and returns one grounded, cited answer.**
 
-![LedgerMind API Docs](/Users/ayushikashyap07/Desktop/Screenshot 2026-09-12 at 5.41.09 PM.png)
+![LedgerMind API Docs](docs/images/ledgermind-api.png)
 *The FastAPI/Swagger interface for LedgerMind's `/query`, `/ingest`, `/ingest/sql`, `/eval/run`, and `/health` endpoints.*
 
 ---
