@@ -1,0 +1,10 @@
+Vendor Master Services Agreement Excerpt
+
+Payment Terms:
+Invoices are due Net 45 from the invoice issue date. A late payment fee of 1.5 percent per month applies to undisputed overdue balances.
+
+Dispute Terms:
+Invoice disputes must be raised within 20 calendar days of invoice receipt. If no dispute is raised in that period, the invoice is deemed accepted and payable in full under the Net terms.
+
+Data Processing:
+Vendors must notify LedgerMind of any data incident within 48 hours.

@@ -1,0 +1,10 @@
+LedgerMind Procurement Policy v2026.3
+
+Section 2. Approval Tiers
+All purchases above 50,000 USD require VP Finance approval. Emergency purchases above 50,000 USD must be approved by the CFO within 24 hours of initiation. Any purchase above 250,000 USD requires two signatures: the CFO and the COO.
+
+Section 3. Competitive Bidding
+The procurement approval threshold is 25,000 USD. Purchases at or above this threshold require at least three vendor quotes unless an exception memo is signed by Legal and Finance.
+
+Section 5. Contract Terms
+Contract durations above 36 months require Risk Committee review before final signature.

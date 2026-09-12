@@ -1,0 +1,7 @@
+Risk Committee Memo: Vendor Concentration Controls
+
+Cloud infrastructure spend concentration with any single vendor must remain below 40 percent of total cloud spend.
+Maximum single-vendor exposure threshold is 18 million USD in annualized committed spend.
+Unresolved audit exceptions are capped at no more than 3 per quarter across finance-critical systems.
+
+Any exception to these limits requires documented mitigation and approval from both the CRO and CFO.
