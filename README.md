@@ -2,8 +2,10 @@
 
 **A hybrid enterprise financial agent that answers natural-language questions by reasoning over both unstructured documents (10-Ks, earnings calls, invoices, policy docs) and structured data (a transactional ledger/database) — and returns one grounded, cited answer.**
 
+The current backend includes an LLM router, `needs_both` query decomposition, hybrid BM25 + dense retrieval, claim-level citation verification, read-only SQL with execution-guided repair, tenant-scoped document retrieval, role-based API access, and a durable audit trail.
+
 ![LedgerMind API Docs](docs/ledgermind-api.png)
-*The FastAPI/Swagger interface for LedgerMind's `/query`, `/ingest`, `/ingest/sql`, `/eval/run`, and `/health` endpoints.*
+*The FastAPI/Swagger interface for LedgerMind's query, ingest, evaluation, admin, and health endpoints.*
 
 ---
 
@@ -76,7 +78,7 @@ These four rules are non-negotiable and shape every design decision below:
                         + citations/sources
 ```
 
-The router classifies each question as `needs_sql`, `needs_rag`, or `needs_both`. For `needs_both` questions, both pipelines run and their outputs are merged by the synthesizer rather than concatenated — the goal is one coherent answer, not two answers side by side.
+The router classifies each question as `needs_sql`, `needs_rag`, or `needs_both`. For `needs_both`, a decomposition step splits the question into a SQL sub-question and a document sub-question; the pipelines run independently and the synthesizer merges their outputs into one coherent, cited answer rather than concatenating two answers.
 
 ## Tech stack — and why
 
@@ -89,8 +91,9 @@ The router classifies each question as `needs_sql`, `needs_rag`, or `needs_both`
 | Orchestration | **LangChain** (chains) | Handles the prompt templates, LLM calls, and retrieval glue. LangGraph is deliberately *not* used by default — it's only added if the router genuinely needs multi-step state or backtracking, since a classifier + two chains is a perfectly good router on its own. |
 | Evaluation & tracing | **LangSmith** | Every chain (router, SQL generation, retrieval, synthesis) is traced so a run can be inspected step by step, not just judged by its final output. |
 | LLM providers | **Anthropic + OpenAI + Groq + Ollama**, behind one interface | No vendor lock-in — the provider is a config value, not a code path, so the system can be benchmarked, swapped across models, or run fully locally. |
+| Identity & audit | **Hashed API keys + SQLAlchemy audit tables** | Per-user roles, tenant-scoped retrieval, revocable keys, and durable request audit events without logging financial content. |
 | Containerization | **Docker + docker-compose** | The app, Postgres, and Chroma run as separate services so the whole system reproduces identically from a fresh clone. |
-| Testing | **pytest** | Standard, and used specifically to unit-test the SQL safety-validation layer in isolation from SQL generation. |
+| Testing | **pytest** | **81 tests** cover SQL safety/execution, retrieval, routing, decomposition, synthesis, identity, tenancy, and audit. |
 
 ## How it works
 
@@ -156,14 +159,49 @@ The system was built in order, with each phase gated on a measured acceptance cr
 
 ## Evaluation
 
-LedgerMind treats evaluation as a deliverable, not an afterthought. The Phase 4 suite computes and logs, per run:
+LedgerMind treats evaluation as a deliverable, not an afterthought. The harness
+(`eval/`) measures routing accuracy, SQL execution correctness, retrieval
+recall/precision@k, citation correctness, answer faithfulness, and end-to-end
+latency. Every run produces a JSON report; LangSmith tracing is optional.
 
-- **Retrieval precision/recall @k** — is the RAG pipeline finding the right chunks?
+### Current results (2026-11-08)
+
+| Metric | Result | Run |
+|---|---:|---|
+| Routing accuracy | **30/30 (100%)** | `gpt-oss-120b` full run |
+| Citation correctness | **30/30 (100%)** | `gpt-oss-120b` full run |
+| Answer faithfulness | **28/30 (93.3%)** | `gpt-oss-120b` full run* |
+| SQL execution correctness | **15/15 (100%)** | Qwen 27b after SQL hardening† |
+| Retrieval recall@3 | **15/15 (100%)** | Hybrid BM25 + dense |
+| Router-only eval | **10/10** | Route + citation check |
+| End-to-end latency | **17.2s p50** | `gpt-oss-120b` synthesis run |
+| Test suite | **81/81** | `pytest` |
+
+\* The two faithfulness misses were traced to the judge receiving file
+references instead of the `[D#]`/`[S#]` evidence IDs used by the answer. That
+harness bug is fixed; a partial post-fix run judged **22/22 faithful** before
+the daily token quota stopped it. A complete same-model re-run is pending.
+
+† The last 20b SQL run before the hardening pass was 11/15. The 15/15 result is
+a cross-model validation; a same-model 20b re-run is pending.
+
+**Why more than one model?** The configured `openai/gpt-oss-20b` model hit
+Groq's 200k-token daily limit during repeated evaluation runs. The 120b and
+Qwen runs are valid but not apples-to-apples with the 20b baseline. Raw
+artifacts are in [`docs/baseline/`](docs/baseline); a stable 20b run is the next
+evaluation task.
+
+### What the harness measures
+
+- **Retrieval precision/recall@k** — is the RAG pipeline finding the right chunks?
 - **SQL execution correctness** — does the generated query return the *right rows*, not just syntactically valid SQL?
-- **Answer faithfulness** — does every claim in the final answer trace back to retrieved evidence (scored via an LLM-as-judge rubric, with the rubric itself logged for auditability)?
+- **Citation correctness** — do citations have the expected type and point at the expected source?
+- **Answer faithfulness** — does every claim trace back to the evidence it cites (LLM-as-judge, with the rubric logged)?
+- **Routing accuracy** — does the classifier choose `needs_sql`, `needs_rag`, or `needs_both` correctly?
 - **End-to-end latency** — how long does a full round trip take?
 
-Every golden-set question produces both a JSON metrics report and a linked LangSmith trace, so any run can be inspected step by step.
+Use `--skip-sql-suite` and `--skip-judge` on `eval.full_eval` to reduce token
+usage during development. A CI regression gate is still on the roadmap.
 
 ## Getting started
 
@@ -171,6 +209,7 @@ Every golden-set question produces both a JSON metrics report and a linked LangS
 git clone <repo-url>
 cd ledgermind
 cp .env.example .env        # set LLM provider + API keys
+                            # production: set API_KEY and AUTH_REQUIRED=true
 docker-compose up
 ```
 
@@ -182,18 +221,28 @@ curl -X POST http://localhost:8000/query \
   -d '{"question": "How does Q3 revenue in the 10-K compare to the general ledger?"}'
 ```
 
+If `API_KEY` is set, add `-H "Authorization: Bearer $API_KEY"`. Tenant-scoped
+user keys are issued through `/admin/api-keys`; see
+[`docs/identity_and_tenants.md`](docs/identity_and_tenants.md).
+
 ## Limitations & known failure modes
 
 - Text-to-SQL accuracy degrades on schema questions outside the allowlisted tables/columns — these are rejected by design rather than answered incorrectly.
-- RAG retrieval quality is bounded by chunking strategy; very long, table-heavy filing sections are harder to retrieve precisely.
-- LLM-as-judge faithfulness scoring is a proxy, not a ground truth — it's logged alongside its rubric so it can be audited, not trusted blindly.
-- Multi-hop `needs_both` questions are the hardest case for the synthesizer and have the widest variance in answer quality.
+- The current evaluation mixes models: 15/15 SQL is Qwen 27b, while routing/citation/faithfulness are 120b. The configured 20b full run is pending daily quota; do not treat these as a single apples-to-apples benchmark.
+- RAG is validated on a small synthetic corpus with hashed embeddings. Real 10-Ks, invoice tables, and scanned PDFs need real embeddings, table-aware extraction, and a reranker.
+- Synthesis adds latency (~17s p50 on 120b); single-row SQL answers use a fast deterministic path, but complex questions still pay for an LLM round trip.
+- LLM-as-judge faithfulness scoring is a proxy, not ground truth — the rubric and evidence are logged for auditability.
+- `needs_both` conflicts are surfaced but do not yet block an answer or trigger human review.
+- SSO/OIDC, per-tenant SQL databases/row-level security, immutable audit storage, TLS, and a secrets manager are still pending.
 
 ## Roadmap
 
-- Expand the golden evaluation set beyond 50 questions as more document types are ingested.
-- Revisit LangGraph if/when the router needs genuine multi-turn state or backtracking (deliberately deferred — see [Design principles](#design-principles)).
-- Cost/latency analysis across the four pluggable LLM providers.
+- Re-run the full suite on `gpt-oss-20b` and gate CI on routing, citation, SQL, and faithfulness regressions.
+- Expand the golden set to 300–500 real Q&A pairs with real filings, invoices, and tables.
+- Add real embeddings + a cross-encoder reranker and table-aware ingestion.
+- Add SSO/OIDC, per-tenant SQL isolation/RLS, and an immutable audit export.
+- Reduce synthesis latency and add a frontend with human-in-the-loop review for conflicts.
+- Cost/latency comparisons across the four pluggable LLM providers.
 
 ---
 
