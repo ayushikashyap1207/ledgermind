@@ -115,23 +115,28 @@ The router classifies each question as `needs_sql`, `needs_rag`, or `needs_both`
 | `POST` | `/ingest` | Ingest unstructured documents into the RAG pipeline. |
 | `POST` | `/ingest/sql` | Bulk-load structured data into the ledger schema. |
 | `POST` | `/eval/run` | Run the evaluation suite and produce a metrics report. |
+| `POST` | `/admin/tenants` | Create a tenant (admin only). |
+| `POST` | `/admin/api-keys` | Issue a user API key (admin only; raw key shown once). |
+| `POST` | `/admin/api-keys/{key_id}/revoke` | Revoke an API key (admin only). |
 
 Full interactive documentation (as shown in the screenshot) is generated automatically by FastAPI and served at `/docs`, with the raw OpenAPI schema at `/openapi.json`.
 
-When `API_KEY` is set, the four business endpoints require
-`Authorization: Bearer $API_KEY`; `/health` and `/docs` remain public. Every
-request receives an `x-request-id` and an audit log line containing method,
-path, status, duration, and client — never question text, documents, SQL, or
-keys.
+`API_KEY` is the bootstrap admin key; per-user keys are issued through
+`/admin/api-keys` and stored only as SHA-256 hashes. Roles are viewer, analyst,
+controller, and admin. Document retrieval is tenant-scoped, and SQL execution is
+restricted to the default tenant until a tenant has its own isolated database.
+Every request receives an `x-request-id` and an audit event containing tenant,
+user, role, method, path, status, duration, and a question hash — never question
+text, documents, SQL, or keys. See `docs/identity_and_tenants.md`.
 
 ## Project structure
 
 ```
-/app          FastAPI service — router, RAG pipeline, Text-to-SQL engine, synthesizer
+/app          FastAPI service — router, RAG, Text-to-SQL, synthesis, identity/auth
 /ingestion    Document and SQL data ingestion pipelines
 /eval         Golden dataset, evaluation harness, LangSmith wiring
 /docs         Project documentation, diagrams, screenshots
-/tests        pytest suite (SQL safety validation has its own dedicated tests)
+/tests        pytest suite (SQL safety, synthesis, identity, tenant isolation)
 /docker       docker-compose.yml and service configs
 ```
 

@@ -125,7 +125,7 @@ def test_answer_query_uses_decomposed_subquestions(monkeypatch):
             violations=None,
         )
 
-    def fake_retrieve(question: str, top_k: int = 3):
+    def fake_retrieve(question: str, top_k: int = 3, tenant_id: str = "default"):
         seen["rag"] = question
         return []
 

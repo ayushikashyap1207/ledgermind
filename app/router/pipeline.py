@@ -27,10 +27,16 @@ class QueryAnswer:
     claims: list[dict] = field(default_factory=list)
     insufficient_evidence: bool = False
     conflicts: list[dict] = field(default_factory=list)
+    tenant_id: str = "default"
 
 
 @trace_chain("router_query")
-def answer_query(question: str, top_k: int = 3) -> QueryAnswer:
+def answer_query(
+    question: str,
+    top_k: int = 3,
+    tenant_id: str = "default",
+    allow_sql: bool = True,
+) -> QueryAnswer:
     decision = classify_question(question)
 
     sql_question = question
@@ -48,21 +54,32 @@ def answer_query(question: str, top_k: int = 3) -> QueryAnswer:
     rag_chunks: list[RetrievedChunk] = []
 
     if decision.route in {"needs_sql", "needs_both"}:
-        try:
-            sql_answer = answer_from_sql(sql_question)
-        except Exception as exc:  # noqa: BLE001
+        if not allow_sql:
             sql_answer = SQLAnswer(
                 question=sql_question,
-                status="execution_error",
+                status="not_answerable",
                 generated_sql=None,
                 executed_sql=None,
                 result=None,
-                error=str(exc),
+                error="SQL execution is not enabled for this tenant.",
                 violations=None,
             )
+        else:
+            try:
+                sql_answer = answer_from_sql(sql_question)
+            except Exception as exc:  # noqa: BLE001
+                sql_answer = SQLAnswer(
+                    question=sql_question,
+                    status="execution_error",
+                    generated_sql=None,
+                    executed_sql=None,
+                    result=None,
+                    error=str(exc),
+                    violations=None,
+                )
 
     if decision.route in {"needs_rag", "needs_both"}:
-        rag_chunks = retrieve(rag_question, top_k=top_k)
+        rag_chunks = retrieve(rag_question, top_k=top_k, tenant_id=tenant_id)
 
     merged = synthesize_answer(
         question=question,
@@ -87,4 +104,5 @@ def answer_query(question: str, top_k: int = 3) -> QueryAnswer:
         claims=merged.claims,
         insufficient_evidence=merged.insufficient_evidence,
         conflicts=merged.conflicts,
+        tenant_id=tenant_id,
     )

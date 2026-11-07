@@ -24,22 +24,27 @@ minimal gate, not a complete compliance program.
 Tests: `tests/test_executor_timeout.py`, updated `tests/test_sql_safety.py`
 and `tests/test_executor_readonly.py`.
 
-## API security and audit
+## Identity, roles, tenants, and audit
 
-- Optional bearer-token auth (`API_KEY`):
-  - protects `/query`, `/ingest`, `/ingest/sql`, and `/eval/run`;
-  - `/health` and `/docs` stay public for load balancers and local development;
-  - timing-safe comparison via `secrets.compare_digest`.
-- Audit middleware (`app/core/audit.py`):
-  - logs request ID, method, path, status, duration, client, and whether an
-    authorization header was present;
-  - never logs question text, document content, SQL, or API keys;
-  - returns `x-request-id` to the caller.
-- Production still needs a write-once audit sink (database/SIEM), SSO/RBAC,
-  tenant isolation, TLS, and a secrets manager. Those are intentionally not
-  faked with a superficial role header.
+- `app/core/identity.py` adds `tenants`, `users`, `api_keys`, and
+  `audit_events` tables with a separate SQLAlchemy Base so they never enter the
+  Text-to-SQL allowlist.
+- API keys are stored as SHA-256 hashes with a shown-once raw token, active
+  flag, and revocation endpoint.
+- Roles are enforced per endpoint: viewer (query), analyst (+ingest),
+  controller (+eval), admin (+tenant/key management).
+- Document retrieval is tenant-scoped through per-tenant Chroma collections.
+- SQL execution is fail-closed: only the default tenant can use the shared
+  ledger; creating a non-default tenant with `sql_enabled=true` is rejected.
+- Audit middleware writes tenant/user/role/request metadata and a question
+  hash to `audit_events`, never question text, documents, SQL, or keys.
+- Anonymous access is rejected once any active database key exists, even if
+  `AUTH_REQUIRED` was forgotten.
 
-Tests: `tests/test_auth.py`.
+See `docs/identity_and_tenants.md` for the model, role table, bootstrap flow,
+and remaining gaps.
+
+Tests: `tests/test_auth.py`, `tests/test_identity.py`.
 
 ## Provider resilience
 
@@ -76,15 +81,17 @@ so partial runs are not mistaken for failures.
 
 ## Verification
 
-- `pytest`: **71/71 passed**
+- `pytest`: **81/81 passed**
 - App health: `app`, `database`, `chroma` all `ok`
 - SQL safety tests include timeout, row cap, star rejection, and function
   allowlist bypass cases.
 
 ## Still open
 
-- Full RBAC, SSO, tenant isolation, and row-level security.
-- Immutable audit storage and retention policy.
+- SSO/OIDC; the current keys are manually issued.
+- A dedicated database/schema per tenant and Postgres row-level security.
+- Alembic migrations; `create_all()` is local/test bootstrap only.
+- Immutable audit storage, retention policy, and SIEM export.
 - TLS termination, secrets manager, and encrypted backups.
 - A valid full eval on the configured `gpt-oss-20b` model once quota resets.
 - Real embeddings + cross-encoder reranker.

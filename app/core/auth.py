@@ -1,25 +1,16 @@
 from __future__ import annotations
 
-import secrets
+from fastapi import Header
 
-from fastapi import Header, HTTPException
-
-from app.core.config import settings
+from app.core.identity import AuthContext, authenticate, require_role
 
 
-def require_api_key(authorization: str | None = Header(default=None)) -> None:
-    """Bearer-token guard for business endpoints.
+def require_api_key(authorization: str | None = Header(default=None)) -> AuthContext:
+    """Backward-compatible authentication dependency.
 
-    Auth is deliberately disabled when API_KEY is unset so local development
-    and the test suite remain frictionless. Production deployments must set it.
+    New endpoints should use `require_role(...)` so authorization is explicit.
     """
-    if not settings.api_key:
-        return
+    return authenticate(authorization)
 
-    expected = f"Bearer {settings.api_key}"
-    if authorization is None or not secrets.compare_digest(authorization, expected):
-        raise HTTPException(
-            status_code=401,
-            detail="Unauthorized",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+
+__all__ = ["AuthContext", "authenticate", "require_api_key", "require_role"]

@@ -40,6 +40,8 @@ class Settings(BaseSettings):
     # --- API security / audit ---
     # Empty means auth is disabled (local development only).
     api_key: str | None = None
+    auth_required: bool = False
+    default_tenant_id: str = "default"
     audit_log_enabled: bool = True
 
     # --- LLM provider (pluggable: swap via config, not code) ---

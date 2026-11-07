@@ -70,14 +70,20 @@ def _cosine(a: list[float], b: list[float]) -> float:
 
 
 @trace_chain("rag_ingest")
-def ingest_documents(paths: list[str], chunk_size: int | None = None, chunk_overlap: int | None = None, reset: bool = False) -> IngestionReport:
+def ingest_documents(
+    paths: list[str],
+    chunk_size: int | None = None,
+    chunk_overlap: int | None = None,
+    reset: bool = False,
+    tenant_id: str = "default",
+) -> IngestionReport:
     start = time.perf_counter()
     chunk_size = chunk_size or settings.chunk_size
     chunk_overlap = chunk_overlap if chunk_overlap is not None else settings.chunk_overlap
 
     files = _iter_supported_files([Path(p) for p in paths])
     if reset:
-        reset_collection()
+        reset_collection(tenant_id)
 
     ids: list[str] = []
     docs: list[str] = []
@@ -98,11 +104,14 @@ def ingest_documents(paths: list[str], chunk_size: int | None = None, chunk_over
                     "chunk_index": idx,
                     "start_char": chunk.start_char,
                     "end_char": chunk.end_char,
+                    "tenant_id": tenant_id,
                 }
             )
 
     if ids:
-        upsert_chunks(ids=ids, documents=docs, metadatas=metas)
+        upsert_chunks(
+            ids=ids, documents=docs, metadatas=metas, tenant_id=tenant_id
+        )
 
     return IngestionReport(
         files=len(files),
@@ -114,10 +123,12 @@ def ingest_documents(paths: list[str], chunk_size: int | None = None, chunk_over
 
 
 @trace_chain("rag_retrieve")
-def retrieve(question: str, top_k: int = 3) -> list[RetrievedChunk]:
+def retrieve(
+    question: str, top_k: int = 3, tenant_id: str = "default"
+) -> list[RetrievedChunk]:
     """Hybrid retrieval: dense candidates + BM25 candidates, fused with RRF,
     reranked with lexical+dense features, then diversified with MMR."""
-    collection = get_collection()
+    collection = get_collection(tenant_id)
     candidate_n = max(settings.retrieval_k, top_k * 3)
 
     dense = collection.query(
@@ -127,7 +138,7 @@ def retrieve(question: str, top_k: int = 3) -> list[RetrievedChunk]:
     )
     dense_ids = list((dense.get("ids") or [[]])[0])
 
-    bm25 = get_bm25_index()
+    bm25 = get_bm25_index(tenant_id)
     bm25_scores = bm25.score_all(question) if bm25 is not None else {}
     bm25_ranked_ids = [
         doc_id

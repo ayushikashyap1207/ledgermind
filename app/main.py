@@ -1,14 +1,21 @@
 from __future__ import annotations
 
+import hashlib
 import logging
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 
 from app.core.audit import AuditMiddleware
-from app.core.auth import require_api_key
+from app.core.auth import AuthContext, require_role
 from app.core.config import settings
+from app.core.identity import (
+    create_api_key,
+    create_tenant,
+    init_identity,
+    revoke_api_key,
+)
 from app.router.pipeline import answer_query
 from app.rag.pipeline import ingest_documents
 from app.sql.db import get_engine
@@ -23,6 +30,7 @@ logger = logging.getLogger("ledgermind")
 
 app = FastAPI(title=settings.app_name)
 app.add_middleware(AuditMiddleware)
+init_identity()
 
 
 class QueryRequest(BaseModel):
@@ -38,6 +46,18 @@ class IngestRequest(BaseModel):
 
 class EvalRequest(BaseModel):
     suite: str = "full"  # rag | router | sql | full
+
+
+class TenantCreateRequest(BaseModel):
+    tenant_id: str = Field(min_length=2, max_length=64, pattern=r"^[a-zA-Z0-9_-]+$")
+    name: str = Field(min_length=1, max_length=200)
+    sql_enabled: bool = False
+
+
+class ApiKeyCreateRequest(BaseModel):
+    tenant_id: str = Field(min_length=2, max_length=64)
+    email: str = Field(min_length=3, max_length=320)
+    role: str = Field(pattern=r"^(viewer|analyst|controller|admin)$")
 
 
 @app.get("/health")
@@ -70,11 +90,21 @@ def health() -> dict:
     return {"status": "ok" if overall_ok else "degraded", "checks": checks}
 
 
-@app.post("/query", dependencies=[Depends(require_api_key)])
-def query(req: QueryRequest) -> dict:
-    ans = answer_query(req.question)
+@app.post("/query")
+def query(
+    req: QueryRequest,
+    request: Request,
+    auth: AuthContext = Depends(require_role("viewer")),
+) -> dict:
+    request.state.question_hash = hashlib.sha256(req.question.encode("utf-8")).hexdigest()
+    ans = answer_query(
+        req.question,
+        tenant_id=auth.tenant_id,
+        allow_sql=auth.sql_enabled,
+    )
     return {
         "question": req.question,
+        "tenant_id": auth.tenant_id,
         "route": ans.route,
         "route_reason": ans.route_reason,
         "route_confidence": ans.route_confidence,
@@ -93,25 +123,42 @@ def query(req: QueryRequest) -> dict:
     }
 
 
-@app.post("/ingest", dependencies=[Depends(require_api_key)])
-def ingest(req: IngestRequest) -> dict:
+@app.post("/ingest")
+def ingest(
+    req: IngestRequest,
+    auth: AuthContext = Depends(require_role("analyst")),
+) -> dict:
     report = ingest_documents(
         paths=req.paths,
         chunk_size=req.chunk_size,
         chunk_overlap=req.chunk_overlap,
         reset=req.reset,
+        tenant_id=auth.tenant_id,
     )
-    return report.__dict__
+    return {**report.__dict__, "tenant_id": auth.tenant_id}
 
 
-@app.post("/ingest/sql", dependencies=[Depends(require_api_key)])
-def ingest_sql() -> dict:
+@app.post("/ingest/sql")
+def ingest_sql(auth: AuthContext = Depends(require_role("admin"))) -> dict:
+    if not auth.sql_enabled:
+        raise HTTPException(
+            status_code=403,
+            detail="SQL execution is not enabled for this tenant.",
+        )
     report = seed()
-    return {"status": "ok", "seeded": report}
+    return {"status": "ok", "tenant_id": auth.tenant_id, "seeded": report}
 
 
-@app.post("/eval/run", dependencies=[Depends(require_api_key)])
-def run_eval(req: EvalRequest) -> dict:
+@app.post("/eval/run")
+def run_eval(
+    req: EvalRequest,
+    auth: AuthContext = Depends(require_role("controller")),
+) -> dict:
+    if auth.tenant_id != settings.default_tenant_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Evaluation runs are restricted to the default tenant.",
+        )
     suite = req.suite.lower().strip()
     if suite == "rag":
         return run_rag_eval()
@@ -122,3 +169,47 @@ def run_eval(req: EvalRequest) -> dict:
     if suite == "full":
         return run_full_stack_eval()
     return {"status": "error", "message": f"Unknown suite: {req.suite}"}
+
+
+@app.post("/admin/tenants")
+def admin_create_tenant(
+    req: TenantCreateRequest,
+    auth: AuthContext = Depends(require_role("admin")),
+) -> dict:
+    try:
+        tenant = create_tenant(req.tenant_id, req.name, req.sql_enabled)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {
+        "tenant_id": tenant.id,
+        "name": tenant.name,
+        "sql_enabled": tenant.sql_enabled,
+    }
+
+
+@app.post("/admin/api-keys")
+def admin_create_api_key(
+    req: ApiKeyCreateRequest,
+    auth: AuthContext = Depends(require_role("admin")),
+) -> dict:
+    try:
+        token = create_api_key(req.tenant_id, req.email, req.role)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {
+        "api_key": token,
+        "tenant_id": req.tenant_id,
+        "email": req.email,
+        "role": req.role,
+        "note": "Store this key now; it will not be shown again.",
+    }
+
+
+@app.post("/admin/api-keys/{key_id}/revoke")
+def admin_revoke_api_key(
+    key_id: int,
+    auth: AuthContext = Depends(require_role("admin")),
+) -> dict:
+    if not revoke_api_key(key_id):
+        raise HTTPException(status_code=404, detail="API key not found")
+    return {"status": "revoked", "key_id": key_id}

@@ -19,3 +19,24 @@ def _ensure_seeded_db():
             from ingestion.seed_synthetic_data import seed
             seed()
     yield
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _clean_identity_test_rows():
+    """Keep test-created keys/tenants/audit rows out of the local database."""
+    yield
+
+    from app.core.identity import (
+        ApiKey,
+        AuditEvent,
+        Tenant,
+        User,
+        get_identity_session,
+    )
+
+    with get_identity_session() as session:
+        session.query(ApiKey).delete()
+        session.query(User).delete()
+        session.query(Tenant).filter(Tenant.id != settings.default_tenant_id).delete()
+        session.query(AuditEvent).delete()
+        session.commit()
