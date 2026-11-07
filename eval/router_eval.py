@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from dataclasses import dataclass
 
 from app.router.pipeline import answer_query
@@ -51,6 +52,11 @@ def run_router_eval() -> dict:
                 "question": case.question,
                 "expected_route": case.expected_route,
                 "actual_route": ans.route,
+                "route_confidence": ans.route_confidence,
+                "route_method": ans.route_method,
+                "sql_question": ans.sql_question,
+                "rag_question": ans.rag_question,
+                "decomposition_method": ans.decomposition_method,
                 "has_sql_citation": has_sql,
                 "has_doc_citation": has_doc,
                 "passed": ok,
@@ -63,4 +69,4 @@ def run_router_eval() -> dict:
 if __name__ == "__main__":
     report = run_router_eval()
     print(json.dumps(report, indent=2))
-    print(f"\n{report['passed']}/{report['total']} router cases passed")
+    print(f"\n{report['passed']}/{report['total']} router cases passed", file=sys.stderr)

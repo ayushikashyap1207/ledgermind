@@ -47,7 +47,7 @@ These four rules are non-negotiable and shape every design decision below:
 
 1. **Text-to-SQL is read-only and validated.** No generated query can ever mutate data, and every query is checked *before* it touches the database — never after.
 2. **Every answer is traceable.** Each claim cites the document chunk or SQL query/rows that produced it.
-3. **The LLM provider is pluggable.** Swapping Anthropic ↔ OpenAI ↔ Groq is a config change, never a code change.
+3. **The LLM provider is pluggable.** Swapping Anthropic ↔ OpenAI ↔ Groq ↔ Ollama is a config change, never a code change.
 4. **Nothing ships without an eval number.** "It works on my test question" is not a completion criterion anywhere in this project.
 
 ## Architecture
@@ -88,22 +88,23 @@ The router classifies each question as `needs_sql`, `needs_rag`, or `needs_both`
 | Vector store | **ChromaDB** | Lightweight, embeddable, and easy to run as its own Docker service — no need for a hosted vector DB to prototype a real RAG pipeline. |
 | Orchestration | **LangChain** (chains) | Handles the prompt templates, LLM calls, and retrieval glue. LangGraph is deliberately *not* used by default — it's only added if the router genuinely needs multi-step state or backtracking, since a classifier + two chains is a perfectly good router on its own. |
 | Evaluation & tracing | **LangSmith** | Every chain (router, SQL generation, retrieval, synthesis) is traced so a run can be inspected step by step, not just judged by its final output. |
-| LLM providers | **Anthropic + OpenAI + Groq**, behind one interface | No vendor lock-in — the provider is a config value, not a code path, so the system can be benchmarked or swapped across models. |
+| LLM providers | **Anthropic + OpenAI + Groq + Ollama**, behind one interface | No vendor lock-in — the provider is a config value, not a code path, so the system can be benchmarked, swapped across models, or run fully locally. |
 | Containerization | **Docker + docker-compose** | The app, Postgres, and Chroma run as separate services so the whole system reproduces identically from a fresh clone. |
 | Testing | **pytest** | Standard, and used specifically to unit-test the SQL safety-validation layer in isolation from SQL generation. |
 
 ## How it works
 
 1. **Ingestion.** Documents (10-K-style filings, transcripts, invoices, policy docs) are chunked, embedded, and stored in ChromaDB. Structured data lives in Postgres across an `accounts` / `transactions` / `invoices` / `general_ledger` / `vendors` schema.
-2. **Routing.** An incoming question is classified as `needs_sql`, `needs_rag`, or `needs_both`.
-3. **Retrieval / SQL generation.**
-   - RAG: ChromaDB retrieval with MMR re-ranking for diverse, non-redundant context.
+2. **Routing.** An incoming question is classified as `needs_sql`, `needs_rag`, or `needs_both` by an LLM structured-output classifier, with a deterministic keyword fallback if the provider is unavailable.
+3. **Retrieval / SQL generation.** For `needs_both` questions, a decomposition step splits the question into a SQL sub-question and a document sub-question, so each pipeline receives a focused ask.
+   - RAG: hybrid retrieval — ChromaDB dense candidates plus a BM25 index, fused with reciprocal rank fusion, then reranked and diversified with MMR.
    - Text-to-SQL: the LLM generates a query against the known schema, which then passes through a dedicated **safety-validation module** before it's ever executed:
      - only `SELECT` statements are allowed — anything else is rejected outright,
      - a table/column allowlist derived from the schema is enforced,
      - every query has a row-limit cap,
-     - and the database connection itself uses a **read-only Postgres role** as defense in depth, so the safety net doesn't depend solely on the LLM behaving.
-4. **Synthesis.** Results from whichever pipeline(s) ran are merged into a single answer, with every claim tagged to its source — a document chunk or a SQL result set.
+     - the database connection itself uses a **read-only Postgres role** as defense in depth, so the safety net doesn't depend solely on the LLM behaving,
+     - and an execution failure triggers one execution-guided repair attempt, which is re-validated before it can run.
+4. **Synthesis.** Results from whichever pipeline(s) ran are merged by a grounded LLM synthesizer into a single answer. Claim-level citations are verified against the cited evidence, unsupported numbers trigger a repair attempt, and a deterministic extractive fallback keeps the service answering when the model fails.
 
 ## API reference
 
@@ -116,6 +117,12 @@ The router classifies each question as `needs_sql`, `needs_rag`, or `needs_both`
 | `POST` | `/eval/run` | Run the evaluation suite and produce a metrics report. |
 
 Full interactive documentation (as shown in the screenshot) is generated automatically by FastAPI and served at `/docs`, with the raw OpenAPI schema at `/openapi.json`.
+
+When `API_KEY` is set, the four business endpoints require
+`Authorization: Bearer $API_KEY`; `/health` and `/docs` remain public. Every
+request receives an `x-request-id` and an audit log line containing method,
+path, status, duration, and client — never question text, documents, SQL, or
+keys.
 
 ## Project structure
 
@@ -181,7 +188,7 @@ curl -X POST http://localhost:8000/query \
 
 - Expand the golden evaluation set beyond 50 questions as more document types are ingested.
 - Revisit LangGraph if/when the router needs genuine multi-turn state or backtracking (deliberately deferred — see [Design principles](#design-principles)).
-- Cost/latency analysis across the three pluggable LLM providers.
+- Cost/latency analysis across the four pluggable LLM providers.
 
 ---
 

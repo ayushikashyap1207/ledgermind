@@ -1,0 +1,117 @@
+{
+  "phase": "phase3_router",
+  "passed": 6,
+  "total": 10,
+  "results": [
+    {
+      "id": "m01",
+      "question": "How many invoices are overdue?",
+      "expected_route": "needs_sql",
+      "actual_route": "needs_sql",
+      "route_confidence": 0.99,
+      "route_method": "llm",
+      "has_sql_citation": true,
+      "has_doc_citation": false,
+      "passed": true
+    },
+    {
+      "id": "m02",
+      "question": "What is the total transaction amount for void status?",
+      "expected_route": "needs_sql",
+      "actual_route": "needs_sql",
+      "route_confidence": 0.99,
+      "route_method": "llm",
+      "has_sql_citation": true,
+      "has_doc_citation": false,
+      "passed": true
+    },
+    {
+      "id": "m03",
+      "question": "What is the procurement approval threshold?",
+      "expected_route": "needs_rag",
+      "actual_route": "needs_rag",
+      "route_confidence": 0.99,
+      "route_method": "llm",
+      "has_sql_citation": false,
+      "has_doc_citation": true,
+      "passed": true
+    },
+    {
+      "id": "m04",
+      "question": "What is the reimbursement SLA after approval?",
+      "expected_route": "needs_rag",
+      "actual_route": "needs_rag",
+      "route_confidence": 0.99,
+      "route_method": "llm",
+      "has_sql_citation": false,
+      "has_doc_citation": true,
+      "passed": true
+    },
+    {
+      "id": "m05",
+      "question": "What is the late payment fee in the vendor MSA?",
+      "expected_route": "needs_rag",
+      "actual_route": "needs_rag",
+      "route_confidence": 0.99,
+      "route_method": "llm",
+      "has_sql_citation": false,
+      "has_doc_citation": true,
+      "passed": true
+    },
+    {
+      "id": "m06",
+      "question": "How many pending transactions do we have and what does the policy say about approval threshold?",
+      "expected_route": "needs_both",
+      "actual_route": "needs_both",
+      "route_confidence": 0.99,
+      "route_method": "llm",
+      "has_sql_citation": false,
+      "has_doc_citation": true,
+      "passed": false
+    },
+    {
+      "id": "m07",
+      "question": "Give the total overdue invoice amount and cite payment terms from vendor agreement.",
+      "expected_route": "needs_both",
+      "actual_route": "needs_both",
+      "route_confidence": 0.99,
+      "route_method": "llm",
+      "has_sql_citation": false,
+      "has_doc_citation": true,
+      "passed": false
+    },
+    {
+      "id": "m08",
+      "question": "Count vendors in India and cite risk memo exposure threshold.",
+      "expected_route": "needs_both",
+      "actual_route": "needs_both",
+      "route_confidence": 0.95,
+      "route_method": "llm",
+      "has_sql_citation": false,
+      "has_doc_citation": true,
+      "passed": false
+    },
+    {
+      "id": "m09",
+      "question": "What gross margin target was announced for FY2026?",
+      "expected_route": "needs_rag",
+      "actual_route": "needs_rag",
+      "route_confidence": 0.99,
+      "route_method": "llm",
+      "has_sql_citation": false,
+      "has_doc_citation": true,
+      "passed": true
+    },
+    {
+      "id": "m10",
+      "question": "Which vendor has highest invoice total and include memo limit context.",
+      "expected_route": "needs_both",
+      "actual_route": "needs_both",
+      "route_confidence": 0.95,
+      "route_method": "llm",
+      "has_sql_citation": false,
+      "has_doc_citation": true,
+      "passed": false
+    }
+  ]
+}

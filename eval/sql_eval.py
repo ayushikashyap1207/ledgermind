@@ -75,12 +75,54 @@ GOLDEN_QUESTIONS: list[GoldenQuestion] = [
 ]
 
 
-def _normalize_rows(rows: list[dict]) -> list[tuple]:
+def _normalize_rows(rows: list[dict], columns: list[str] | None = None) -> list[tuple]:
     """Order-independent, type-loose comparison: sort rows by their
     string representation so column-order/row-order differences between
     an LLM's SELECT and the golden SELECT don't cause false negatives."""
-    normed = [tuple(str(v) for v in row.values()) for row in rows]
+    if columns is not None:
+        normed = [tuple(str(row.get(column)) for column in columns) for row in rows]
+    else:
+        normed = [tuple(str(v) for v in row.values()) for row in rows]
     return sorted(normed)
+
+
+def _project(rows: list[dict], columns: list[str]) -> list[dict]:
+    return [{column: row.get(column) for column in columns} for row in rows]
+
+
+def results_match(
+    generated_columns: list[str],
+    generated_rows: list[dict],
+    golden_columns: list[str],
+    golden_rows: list[dict],
+) -> bool:
+    """Compare result sets without punishing a legitimate projection.
+
+    Two different SELECTs can answer the same question. Accept:
+    1. an exact row match (regardless of column aliases);
+    2. a generated superset of the golden columns (project it down);
+    3. a generated subset of the golden columns (project the golden down),
+       e.g. "which vendor" returning the vendor name without the total.
+    Value mismatches and missing/extra rows still fail.
+    """
+    if _normalize_rows(generated_rows) == _normalize_rows(golden_rows):
+        return True
+
+    if set(golden_columns).issubset(set(generated_columns)):
+        projected = _project(generated_rows, golden_columns)
+        if _normalize_rows(projected, golden_columns) == _normalize_rows(
+            golden_rows, golden_columns
+        ):
+            return True
+
+    if generated_columns and set(generated_columns).issubset(set(golden_columns)):
+        projected_golden = _project(golden_rows, generated_columns)
+        if _normalize_rows(generated_rows, generated_columns) == _normalize_rows(
+            projected_golden, generated_columns
+        ):
+            return True
+
+    return False
 
 
 def run_golden_only() -> dict:
@@ -112,7 +154,13 @@ def run_full_eval() -> dict:
     results = []
     for gq in GOLDEN_QUESTIONS:
         golden_validation = validate_sql(gq.golden_sql)
-        golden_rows = execute_validated_sql(golden_validation.safe_sql).rows if golden_validation.is_safe else []
+        golden_result = (
+            execute_validated_sql(golden_validation.safe_sql)
+            if golden_validation.is_safe
+            else None
+        )
+        golden_rows = golden_result.rows if golden_result else []
+        golden_columns = golden_result.columns if golden_result else []
 
         try:
             answer = answer_from_sql(gq.question)
@@ -129,12 +177,19 @@ def run_full_eval() -> dict:
 
         correct = False
         if answer.status == "ok" and answer.result is not None:
-            correct = _normalize_rows(answer.result.rows) == _normalize_rows(golden_rows)
+            correct = results_match(
+                generated_columns=answer.result.columns,
+                generated_rows=answer.result.rows,
+                golden_columns=golden_columns,
+                golden_rows=golden_rows,
+            )
 
         results.append({
             "id": gq.id, "question": gq.question, "status": answer.status,
             "generated_sql": answer.generated_sql, "correct": correct,
             "error": answer.error,
+            "repair_attempted": answer.repair_attempted,
+            "repair_succeeded": answer.repair_succeeded,
         })
 
     passed = sum(1 for r in results if r["correct"])

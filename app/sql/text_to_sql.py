@@ -4,14 +4,17 @@ this module's only job is "question + schema -> candidate SQL string".
 It is never trusted on its own; every output is passed to
 safety.validate_sql() before anything touches the database (see
 app/sql/pipeline.py for the wiring).
+
+There is intentionally no hardcoded fallback here. If the configured LLM
+provider fails, the exception propagates so callers can fail closed
+(return an execution error / abstain) instead of answering with SQL that
+was never generated for the question.
 """
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 
-from app.core.config import settings
 from app.core.llm import LLMClient, get_llm
 from app.sql.schema_registry import SCHEMA_PROMPT
 
@@ -37,6 +40,17 @@ IMPORTANT ACCOUNTING RULES:
 - Do not assume that transactions.account_id represents the revenue account
   when answering revenue questions.
 
+QUERY RULES:
+- "Overdue" invoices means invoices.status = 'overdue'. Do not infer overdue
+  from due_date unless the user explicitly asks for invoices past their due date.
+- In a join, qualify every column with its table alias (for example
+  i.vendor_id and v.vendor_id). Never leave a column ambiguous.
+- Never use SELECT *. Select only the columns needed to answer the question.
+- For ranking questions ("which vendor has the highest ..."), include the
+  ranked metric in the SELECT with an alias, for example:
+  SELECT v.vendor_name, SUM(i.amount) AS total ... ORDER BY total DESC LIMIT 1
+- Return exactly one SELECT statement. Do not add a semicolon or any explanation.
+
 Schema:
 {schema}
 """.strip()
@@ -48,18 +62,8 @@ class SQLGenerationResult:
     not_answerable: bool
 
 
-def generate_sql(question: str, llm: LLMClient | None = None) -> SQLGenerationResult:
-    llm = llm or get_llm()
-    system = SYSTEM_PROMPT.format(schema=SCHEMA_PROMPT)
-    try:
-        completion = llm.complete(system=system, user=question).strip()
-    except Exception:
-        if not settings.sql_fallback_enabled:
-            raise
-        fallback_sql = _fallback_generate_sql(question)
-        if fallback_sql is None:
-            return SQLGenerationResult(question=question, raw_sql=None, not_answerable=True)
-        return SQLGenerationResult(question=question, raw_sql=fallback_sql, not_answerable=False)
+def _parse_completion(question: str, completion: str) -> SQLGenerationResult:
+    completion = (completion or "").strip()
 
     # Strip accidental markdown fences — small models love to add these
     # even when told not to.
@@ -68,70 +72,45 @@ def generate_sql(question: str, llm: LLMClient | None = None) -> SQLGenerationRe
         if completion.lower().startswith("sql"):
             completion = completion[3:].strip()
 
-    if completion.strip().upper() == "NOT_ANSWERABLE":
+    if not completion or completion.upper() == "NOT_ANSWERABLE":
         return SQLGenerationResult(question=question, raw_sql=None, not_answerable=True)
 
     return SQLGenerationResult(question=question, raw_sql=completion, not_answerable=False)
 
 
-def _fallback_generate_sql(question: str) -> str | None:
-    q = re.sub(r"\s+", " ", question.lower()).strip()
+def generate_sql(question: str, llm: LLMClient | None = None) -> SQLGenerationResult:
+    llm = llm or get_llm()
+    system = SYSTEM_PROMPT.format(schema=SCHEMA_PROMPT)
+    completion = llm.complete(system=system, user=question)
+    return _parse_completion(question, completion)
 
-    if "vendors" in q and "india" in q:
-        return "SELECT COUNT(*) AS n FROM vendors WHERE country = 'India'"
-    if "how many" in q and "overdue" in q and "invoice" in q:
-        return "SELECT COUNT(*) AS n FROM invoices WHERE status = 'overdue'"
-    if "overdue" in q and "total" in q and "invoice" in q:
-        return "SELECT SUM(amount) AS total FROM invoices WHERE status = 'overdue'"
-    if "account_type" in q and "revenue" in q:
-        return "SELECT account_name FROM accounts WHERE account_type = 'revenue'"
-    if "pending" in q and "transaction" in q:
-        return "SELECT COUNT(*) AS n FROM transactions WHERE status = 'pending'"
-    if "invoice amount per vendor category" in q or ("vendor category" in q and "total" in q):
-        return (
-            "SELECT v.vendor_category, SUM(i.amount) AS total FROM invoices i "
-            "JOIN vendors v ON i.vendor_id = v.vendor_id GROUP BY v.vendor_category"
-        )
-    if "highest total invoiced" in q or "highest invoice total" in q:
-        return (
-            "SELECT v.vendor_name, SUM(i.amount) AS total FROM invoices i "
-            "JOIN vendors v ON i.vendor_id = v.vendor_id "
-            "GROUP BY v.vendor_name ORDER BY total DESC LIMIT 1"
-        )
-    if "how many invoices does each vendor" in q:
-        return (
-            "SELECT v.vendor_name, COUNT(*) AS n FROM invoices i "
-            "JOIN vendors v ON i.vendor_id = v.vendor_id "
-            "GROUP BY v.vendor_name ORDER BY n DESC"
-        )
-    if "total debit and credit" in q and "general ledger" in q and "2024-q1" in q:
-        return (
-            "SELECT SUM(debit) AS total_debit, SUM(credit) AS total_credit "
-            "FROM general_ledger WHERE fiscal_quarter = '2024-Q1'"
-        )
-    if "accounts exist per account_type" in q:
-        return "SELECT account_type, COUNT(*) AS n FROM accounts GROUP BY account_type"
-    if "average invoice amount" in q:
-        return "SELECT AVG(amount) AS avg_amount FROM invoices"
-    if "5 most recent transactions" in q:
-        return (
-            "SELECT transaction_id, transaction_date, description, amount "
-            "FROM transactions ORDER BY transaction_date DESC LIMIT 5"
-        )
-    if "cloud infrastructure" in q and "how many vendors" in q:
-        return "SELECT COUNT(*) AS n FROM vendors WHERE vendor_category = 'Cloud Infrastructure'"
-    if "void" in q and "total transaction amount" in q:
-        return "SELECT SUM(amount) AS total FROM transactions WHERE status = 'void'"
-    if "general ledger entries" in q and "fiscal quarter" in q:
-        return (
-            "SELECT fiscal_quarter, COUNT(*) AS n FROM general_ledger "
-            "GROUP BY fiscal_quarter ORDER BY fiscal_quarter"
-        )
-    if "overdue" in q and "germany" in q:
-        return (
-            "SELECT i.invoice_number, i.amount FROM invoices i "
-            "JOIN vendors v ON i.vendor_id = v.vendor_id "
-            "WHERE i.status = 'overdue' AND v.country = 'Germany'"
-        )
 
-    return None
+REPAIR_SYSTEM_PROMPT = (
+    SYSTEM_PROMPT
+    + """
+
+REPAIR MODE:
+The previous SELECT failed when executed. Use the database error and the
+failed SQL to produce a corrected query that answers the same question.
+Preserve the question's intent. Return only one corrected SELECT, or
+NOT_ANSWERABLE if the question truly cannot be answered.
+"""
+)
+
+
+def repair_sql(
+    question: str,
+    failed_sql: str,
+    error: str,
+    llm: LLMClient | None = None,
+) -> SQLGenerationResult:
+    """One execution-guided repair attempt for a failed generated query."""
+    llm = llm or get_llm()
+    system = REPAIR_SYSTEM_PROMPT.format(schema=SCHEMA_PROMPT)
+    user = (
+        f"Question: {question}\n\n"
+        f"Failed SQL:\n{failed_sql}\n\n"
+        f"Database error:\n{error}"
+    )
+    completion = llm.complete(system=system, user=user)
+    return _parse_completion(question, completion)

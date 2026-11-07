@@ -9,6 +9,7 @@ not a code change.
 
 from __future__ import annotations
 
+import time
 from abc import ABC, abstractmethod
 
 from app.core.config import LLMProvider, Settings, settings
@@ -66,6 +67,30 @@ class OpenAIClient(LLMClient):
         return resp.choices[0].message.content or ""
 
 
+class OllamaClient(LLMClient):
+    """Local OpenAI-compatible endpoint, for offline/self-hosted deployments."""
+
+    def __init__(self, cfg: Settings):
+        from openai import OpenAI  # local import: optional dependency
+
+        self._client = OpenAI(api_key="ollama", base_url=cfg.ollama_base_url)
+        self._model = cfg.llm_model
+        self._max_tokens = cfg.llm_max_tokens
+        self._temperature = cfg.llm_temperature
+
+    def complete(self, system: str, user: str) -> str:
+        resp = self._client.chat.completions.create(
+            model=self._model,
+            max_tokens=self._max_tokens,
+            temperature=self._temperature,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+        )
+        return resp.choices[0].message.content or ""
+
+
 class GroqClient(LLMClient):
     def __init__(self, cfg: Settings):
         from groq import Groq  # local import: optional dependency
@@ -88,10 +113,47 @@ class GroqClient(LLMClient):
         return resp.choices[0].message.content or ""
 
 
+class RetryingLLMClient(LLMClient):
+    """Retry transient provider failures with exponential backoff."""
+
+    def __init__(self, inner: LLMClient, max_retries: int, backoff_seconds: float):
+        self._inner = inner
+        self._max_retries = max(0, max_retries)
+        self._backoff_seconds = max(0.0, backoff_seconds)
+
+    @property
+    def inner(self) -> LLMClient:
+        return self._inner
+
+    def complete(self, system: str, user: str) -> str:
+        last_error: Exception | None = None
+        for attempt in range(self._max_retries + 1):
+            try:
+                return self._inner.complete(system=system, user=user)
+            except Exception as exc:  # noqa: BLE001
+                last_error = exc
+                if attempt >= self._max_retries or not _is_retryable(exc):
+                    raise
+                time.sleep(self._backoff_seconds * (2 ** attempt))
+        raise last_error  # pragma: no cover
+
+
+def _is_retryable(exc: Exception) -> bool:
+    status = getattr(exc, "status_code", None)
+    if status in {408, 409, 429, 500, 502, 503, 504}:
+        return True
+    message = str(exc).lower()
+    return any(
+        token in message
+        for token in ("rate limit", "timeout", "temporarily unavailable", "connection reset")
+    )
+
+
 _PROVIDER_MAP: dict[LLMProvider, type[LLMClient]] = {
     LLMProvider.ANTHROPIC: AnthropicClient,
     LLMProvider.OPENAI: OpenAIClient,
     LLMProvider.GROQ: GroqClient,
+    LLMProvider.OLLAMA: OllamaClient,
 }
 
 
@@ -101,4 +163,11 @@ def get_llm(cfg: Settings | None = None) -> LLMClient:
         cls = _PROVIDER_MAP[cfg.llm_provider]
     except KeyError as e:
         raise ValueError(f"Unknown LLM provider: {cfg.llm_provider}") from e
-    return cls(cfg)
+    client = cls(cfg)
+    if cfg.llm_max_retries > 0:
+        return RetryingLLMClient(
+            inner=client,
+            max_retries=cfg.llm_max_retries,
+            backoff_seconds=cfg.llm_retry_backoff_seconds,
+        )
+    return client

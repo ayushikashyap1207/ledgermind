@@ -11,7 +11,7 @@ from app.sql.safety import validate_sql
 
 
 def test_select_executes_and_returns_rows():
-    validation = validate_sql("SELECT * FROM accounts")
+    validation = validate_sql("SELECT account_id, account_name, account_type FROM accounts")
     assert validation.is_safe
     result = execute_validated_sql(validation.safe_sql)
     assert result.row_count > 0
@@ -26,7 +26,7 @@ def test_connection_itself_refuses_writes_even_if_validator_is_bypassed():
 
 
 def test_row_limit_actually_caps_returned_rows():
-    validation = validate_sql("SELECT * FROM transactions", row_limit=10)
+    validation = validate_sql("SELECT transaction_id FROM transactions", row_limit=10)
     assert validation.is_safe
     result = execute_validated_sql(validation.safe_sql)
     assert result.row_count <= 10

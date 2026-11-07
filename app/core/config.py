@@ -22,6 +22,7 @@ class LLMProvider(str, Enum):
     ANTHROPIC = "anthropic"
     OPENAI = "openai"
     GROQ = "groq"
+    OLLAMA = "ollama"
 
 
 class Settings(BaseSettings):
@@ -36,15 +37,22 @@ class Settings(BaseSettings):
     environment: Literal["local", "test", "production"] = "local"
     log_level: str = "INFO"
 
+    # --- API security / audit ---
+    # Empty means auth is disabled (local development only).
+    api_key: str | None = None
+    audit_log_enabled: bool = True
+
     # --- LLM provider (pluggable: swap via config, not code) ---
     llm_provider: LLMProvider = LLMProvider.ANTHROPIC
     llm_model: str = "claude-sonnet-4-6"
     anthropic_api_key: str | None = None
     openai_api_key: str | None = None
     groq_api_key: str | None = None
+    ollama_base_url: str = "http://127.0.0.1:11434/v1"
     llm_temperature: float = 0.0
     llm_max_tokens: int = 1024
-    sql_fallback_enabled: bool = True
+    llm_max_retries: int = 2
+    llm_retry_backoff_seconds: float = 0.5
 
     # --- Structured data (Text-to-SQL) ---
     # sqlite for local dev per spec; postgres in docker-compose / production.
@@ -91,6 +99,7 @@ class Settings(BaseSettings):
             LLMProvider.ANTHROPIC: self.anthropic_api_key,
             LLMProvider.OPENAI: self.openai_api_key,
             LLMProvider.GROQ: self.groq_api_key,
+            LLMProvider.OLLAMA: "ollama",  # local server does not require a key
         }[self.llm_provider]
 
 

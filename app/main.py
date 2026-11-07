@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 
+from app.core.audit import AuditMiddleware
+from app.core.auth import require_api_key
 from app.core.config import settings
 from app.router.pipeline import answer_query
 from app.rag.pipeline import ingest_documents
@@ -20,6 +22,7 @@ logging.basicConfig(level=settings.log_level)
 logger = logging.getLogger("ledgermind")
 
 app = FastAPI(title=settings.app_name)
+app.add_middleware(AuditMiddleware)
 
 
 class QueryRequest(BaseModel):
@@ -67,21 +70,30 @@ def health() -> dict:
     return {"status": "ok" if overall_ok else "degraded", "checks": checks}
 
 
-@app.post("/query")
+@app.post("/query", dependencies=[Depends(require_api_key)])
 def query(req: QueryRequest) -> dict:
     ans = answer_query(req.question)
     return {
         "question": req.question,
         "route": ans.route,
         "route_reason": ans.route_reason,
+        "route_confidence": ans.route_confidence,
+        "route_method": ans.route_method,
+        "sql_question": ans.sql_question,
+        "rag_question": ans.rag_question,
+        "decomposition_method": ans.decomposition_method,
         "answer": ans.answer,
+        "answer_method": ans.answer_method,
+        "claims": ans.claims,
+        "insufficient_evidence": ans.insufficient_evidence,
+        "conflicts": ans.conflicts,
         "citations": ans.citations,
         "sql_status": ans.sql_status,
         "rag_hits": ans.rag_hits,
     }
 
 
-@app.post("/ingest")
+@app.post("/ingest", dependencies=[Depends(require_api_key)])
 def ingest(req: IngestRequest) -> dict:
     report = ingest_documents(
         paths=req.paths,
@@ -92,13 +104,13 @@ def ingest(req: IngestRequest) -> dict:
     return report.__dict__
 
 
-@app.post("/ingest/sql")
+@app.post("/ingest/sql", dependencies=[Depends(require_api_key)])
 def ingest_sql() -> dict:
     report = seed()
     return {"status": "ok", "seeded": report}
 
 
-@app.post("/eval/run")
+@app.post("/eval/run", dependencies=[Depends(require_api_key)])
 def run_eval(req: EvalRequest) -> dict:
     suite = req.suite.lower().strip()
     if suite == "rag":

@@ -11,13 +11,13 @@ from app.sql.safety import validate_sql
 # ---------------------------------------------------------------------
 
 GOOD_QUERIES = [
-    "SELECT * FROM transactions WHERE amount > 1000",
+    "SELECT transaction_id, amount FROM transactions WHERE amount > 1000",
     "SELECT account_name, account_type FROM accounts",
     "SELECT SUM(amount) FROM transactions WHERE status = 'posted'",
     "SELECT v.vendor_name, SUM(i.amount) as total FROM invoices i "
     "JOIN vendors v ON i.vendor_id = v.vendor_id GROUP BY v.vendor_name",
     "SELECT fiscal_quarter, SUM(credit) - SUM(debit) FROM general_ledger GROUP BY fiscal_quarter",
-    "select * from vendors where country = 'India'",
+    "select vendor_id, vendor_name from vendors where country = 'India'",
     "SELECT COUNT(*) FROM invoices WHERE status = 'overdue'",
 ]
 
@@ -28,6 +28,15 @@ def test_valid_selects_are_accepted():
         assert result.is_safe, f"expected safe: {q} -> {result.reason} {result.violations}"
         assert result.safe_sql is not None
         assert "limit" in result.safe_sql.lower()
+
+
+def test_count_star_is_allowed_but_bare_star_is_not():
+    count_star = validate_sql("SELECT COUNT(*) FROM invoices")
+    assert count_star.is_safe, count_star.violations
+
+    bare_star = validate_sql("SELECT * FROM invoices")
+    assert not bare_star.is_safe
+    assert any("SELECT *" in violation for violation in bare_star.violations)
 
 
 # ---------------------------------------------------------------------
@@ -46,6 +55,10 @@ MALICIOUS_QUERIES = {
     "pragma_probe": "PRAGMA table_info(accounts)",
     "attach_database": "ATTACH DATABASE '/etc/passwd' AS pwned",
     "off_schema_column": "SELECT ssn FROM accounts",
+    "select_star": "SELECT * FROM transactions",
+    "qualified_select_star": "SELECT t.* FROM transactions t",
+    "function_not_allowlisted": "SELECT json_extract(description, '$.x') FROM transactions",
+    "load_extension": "SELECT load_extension('/tmp/evil')",
 }
 
 
@@ -65,19 +78,21 @@ def test_multi_statement_is_rejected_before_execution_not_after():
 
 
 def test_row_limit_is_enforced_when_missing():
-    result = validate_sql("SELECT * FROM transactions", row_limit=50)
+    result = validate_sql("SELECT transaction_id FROM transactions", row_limit=50)
     assert result.is_safe
     assert "limit 50" in result.safe_sql.lower()
 
 
 def test_row_limit_is_clamped_when_llm_requests_too_many():
-    result = validate_sql("SELECT * FROM transactions LIMIT 100000", row_limit=50)
+    result = validate_sql(
+        "SELECT transaction_id FROM transactions LIMIT 100000", row_limit=50
+    )
     assert result.is_safe
     assert "limit 50" in result.safe_sql.lower()
 
 
 def test_existing_small_limit_is_respected_not_overridden():
-    result = validate_sql("SELECT * FROM transactions LIMIT 5", row_limit=500)
+    result = validate_sql("SELECT transaction_id FROM transactions LIMIT 5", row_limit=500)
     assert result.is_safe
     assert "limit 5" in result.safe_sql.lower()
 

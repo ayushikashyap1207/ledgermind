@@ -9,7 +9,14 @@ from pypdf import PdfReader
 from app.core.config import settings
 from app.core.tracing import trace_chain
 from app.rag.chunker import split_into_chunks
-from app.rag.store import get_collection, get_embedding_function, reset_collection, upsert_chunks
+from app.rag.hybrid import mmr_select, normalize_scores, reciprocal_rank_fusion
+from app.rag.store import (
+    get_bm25_index,
+    get_collection,
+    get_embedding_function,
+    reset_collection,
+    upsert_chunks,
+)
 
 
 @dataclass
@@ -62,36 +69,6 @@ def _cosine(a: list[float], b: list[float]) -> float:
     return sum(x * y for x, y in zip(a, b))
 
 
-def _mmr_rank(query_embedding: list[float], candidate_embeddings: list[list[float]], k: int, lam: float = 0.7) -> list[int]:
-    if candidate_embeddings is None or len(candidate_embeddings) == 0:
-        return []
-
-    selected: list[int] = []
-    pool = set(range(len(candidate_embeddings)))
-
-    while pool and len(selected) < k:
-        best_idx = -1
-        best_score = float("-inf")
-
-        for idx in pool:
-            relevance = _cosine(query_embedding, candidate_embeddings[idx])
-            diversity_penalty = 0.0
-            if selected:
-                diversity_penalty = max(
-                    _cosine(candidate_embeddings[idx], candidate_embeddings[sel])
-                    for sel in selected
-                )
-            score = lam * relevance - (1 - lam) * diversity_penalty
-            if score > best_score:
-                best_score = score
-                best_idx = idx
-
-        selected.append(best_idx)
-        pool.remove(best_idx)
-
-    return selected
-
-
 @trace_chain("rag_ingest")
 def ingest_documents(paths: list[str], chunk_size: int | None = None, chunk_overlap: int | None = None, reset: bool = False) -> IngestionReport:
     start = time.perf_counter()
@@ -138,39 +115,90 @@ def ingest_documents(paths: list[str], chunk_size: int | None = None, chunk_over
 
 @trace_chain("rag_retrieve")
 def retrieve(question: str, top_k: int = 3) -> list[RetrievedChunk]:
+    """Hybrid retrieval: dense candidates + BM25 candidates, fused with RRF,
+    reranked with lexical+dense features, then diversified with MMR."""
     collection = get_collection()
-    query_res = collection.query(
+    candidate_n = max(settings.retrieval_k, top_k * 3)
+
+    dense = collection.query(
         query_texts=[question],
-        n_results=max(settings.retrieval_k, top_k),
-        include=["documents", "metadatas", "embeddings", "distances"],
+        n_results=candidate_n,
+        include=["documents", "metadatas", "distances"],
     )
+    dense_ids = list((dense.get("ids") or [[]])[0])
 
-    docs = query_res.get("documents", [[]])[0]
-    metas = query_res.get("metadatas", [[]])[0]
-    raw_embeddings = query_res.get("embeddings", [[]])[0]
-    embeddings = [list(map(float, e)) for e in raw_embeddings]
-    ids = query_res.get("ids", [[]])[0]
+    bm25 = get_bm25_index()
+    bm25_scores = bm25.score_all(question) if bm25 is not None else {}
+    bm25_ranked_ids = [
+        doc_id
+        for doc_id, _ in sorted(
+            bm25_scores.items(), key=lambda item: (-item[1], item[0])
+        )
+    ][:candidate_n]
 
-    if not docs:
+    if not dense_ids and not bm25_ranked_ids:
+        return []
+
+    candidate_ids = list(dict.fromkeys([*dense_ids, *bm25_ranked_ids]))
+    fetched = collection.get(
+        ids=candidate_ids,
+        include=["documents", "metadatas", "embeddings"],
+    )
+    ids = fetched.get("ids") or []
+    docs = fetched.get("documents") or []
+    metas = fetched.get("metadatas") or []
+    raw_embeddings = fetched.get("embeddings")
+    if raw_embeddings is None:
+        raw_embeddings = []
+
+    doc_by_id = dict(zip(ids, docs))
+    meta_by_id = dict(zip(ids, metas))
+    emb_by_id = {
+        doc_id: [float(value) for value in embedding]
+        for doc_id, embedding in zip(ids, raw_embeddings)
+    }
+    ids = [doc_id for doc_id in ids if doc_id in emb_by_id]
+    if not ids:
         return []
 
     query_embedding = get_embedding_function().embed_text(question)
-    ranked_idx = _mmr_rank(
-        query_embedding=query_embedding,
-        candidate_embeddings=embeddings,
-        k=min(top_k, len(docs)),
+    dense_scores = {
+        doc_id: _cosine(query_embedding, embedding)
+        for doc_id, embedding in emb_by_id.items()
+    }
+
+    rrf_scores = reciprocal_rank_fusion([dense_ids, bm25_ranked_ids])
+    rrf_norm = normalize_scores({doc_id: rrf_scores.get(doc_id, 0.0) for doc_id in ids})
+    bm25_norm = normalize_scores({doc_id: bm25_scores.get(doc_id, 0.0) for doc_id in ids})
+    dense_norm = normalize_scores(dense_scores)
+
+    relevance = {
+        doc_id: (
+            0.4 * rrf_norm.get(doc_id, 0.0)
+            + 0.4 * bm25_norm.get(doc_id, 0.0)
+            + 0.2 * dense_norm.get(doc_id, 0.0)
+        )
+        for doc_id in ids
+    }
+
+    selected = mmr_select(
+        candidate_ids=ids,
+        relevance=relevance,
+        embeddings=emb_by_id,
+        top_k=min(top_k, len(ids)),
+        lambda_=0.85,
     )
 
     ranked: list[RetrievedChunk] = []
-    for idx in ranked_idx:
-        md = metas[idx] or {}
+    for doc_id in selected:
+        md = meta_by_id.get(doc_id) or {}
         ranked.append(
             RetrievedChunk(
-                chunk_id=ids[idx],
+                chunk_id=doc_id,
                 source=str(md.get("source", "unknown")),
                 chunk_index=int(md.get("chunk_index", -1)),
-                text=docs[idx],
-                score=float(_cosine(query_embedding, embeddings[idx])),
+                text=doc_by_id.get(doc_id, ""),
+                score=float(relevance.get(doc_id, 0.0)),
             )
         )
 

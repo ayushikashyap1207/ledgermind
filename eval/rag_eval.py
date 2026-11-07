@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from dataclasses import dataclass
 
 from app.rag.pipeline import ingest_documents, retrieve
@@ -80,4 +81,4 @@ def run_rag_eval(
 if __name__ == "__main__":
     report = run_rag_eval()
     print(json.dumps(report, indent=2))
-    print(f"\n{report['passed']}/{report['total']} retrieval cases passed (top-3)")
+    print(f"\n{report['passed']}/{report['total']} retrieval cases passed (top-3)", file=sys.stderr)

@@ -1,0 +1,127 @@
+{
+  "mode": "full",
+  "passed": 12,
+  "total": 15,
+  "results": [
+    {
+      "id": "q01",
+      "question": "How many vendors are based in India?",
+      "status": "ok",
+      "generated_sql": "SELECT COUNT(*) FROM vendors WHERE country = 'India'",
+      "correct": true,
+      "error": null
+    },
+    {
+      "id": "q02",
+      "question": "What is the total amount of all overdue invoices?",
+      "status": "ok",
+      "generated_sql": "SELECT SUM(amount) FROM invoices WHERE due_date < date('now')",
+      "correct": false,
+      "error": null
+    },
+    {
+      "id": "q03",
+      "question": "List all account names with account_type 'revenue'.",
+      "status": "ok",
+      "generated_sql": "SELECT account_name FROM accounts WHERE account_type = 'revenue'",
+      "correct": true,
+      "error": null
+    },
+    {
+      "id": "q04",
+      "question": "How many transactions are currently pending?",
+      "status": "ok",
+      "generated_sql": "SELECT COUNT(*) FROM transactions WHERE status = 'pending'",
+      "correct": true,
+      "error": null
+    },
+    {
+      "id": "q05",
+      "question": "What is the total invoice amount per vendor category?",
+      "status": "ok",
+      "generated_sql": "SELECT vendor_category, SUM(amount) AS total_amount\nFROM vendors\nJOIN invoices ON vendors.vendor_id = invoices.vendor_id\nGROUP BY vendor_category;",
+      "correct": true,
+      "error": null
+    },
+    {
+      "id": "q06",
+      "question": "Which vendor has the highest total invoiced amount?",
+      "status": "ok",
+      "generated_sql": "SELECT v.vendor_name, SUM(i.amount) AS total_invoiced\nFROM invoices i\nJOIN vendors v ON i.vendor_id = v.vendor_id\nGROUP BY v.vendor_id, v.vendor_name\nORDER BY total_invoiced DESC\nLIMIT 1",
+      "correct": true,
+      "error": null
+    },
+    {
+      "id": "q07",
+      "question": "How many invoices does each vendor have, ordered by count descending?",
+      "status": "ok",
+      "generated_sql": "SELECT v.vendor_name, COUNT(i.invoice_id) AS invoice_count\nFROM vendors v\nLEFT JOIN invoices i ON v.vendor_id = i.vendor_id\nGROUP BY v.vendor_name\nORDER BY invoice_count DESC;",
+      "correct": true,
+      "error": null
+    },
+    {
+      "id": "q08",
+      "question": "What is the total debit and credit recorded in the general ledger for fiscal quarter 2024-Q1?",
+      "status": "ok",
+      "generated_sql": "SELECT SUM(debit) AS total_debit, SUM(credit) AS total_credit FROM general_ledger WHERE fiscal_quarter = '2024-Q1'",
+      "correct": true,
+      "error": null
+    },
+    {
+      "id": "q09",
+      "question": "How many accounts exist per account_type?",
+      "status": "ok",
+      "generated_sql": "SELECT account_type, COUNT(*) AS account_count FROM accounts GROUP BY account_type",
+      "correct": true,
+      "error": null
+    },
+    {
+      "id": "q10",
+      "question": "What is the average invoice amount across all invoices?",
+      "status": "ok",
+      "generated_sql": "SELECT AVG(amount) AS avg_invoice_amount FROM invoices",
+      "correct": true,
+      "error": null
+    },
+    {
+      "id": "q11",
+      "question": "List the 5 most recent transactions by date.",
+      "status": "ok",
+      "generated_sql": "SELECT * FROM transactions ORDER BY transaction_date DESC LIMIT 5",
+      "correct": false,
+      "error": null
+    },
+    {
+      "id": "q12",
+      "question": "How many vendors are in the 'Cloud Infrastructure' category?",
+      "status": "ok",
+      "generated_sql": "SELECT COUNT(*) FROM vendors WHERE vendor_category = 'Cloud Infrastructure'",
+      "correct": true,
+      "error": null
+    },
+    {
+      "id": "q13",
+      "question": "What is the total transaction amount for transactions with status 'void'?",
+      "status": "ok",
+      "generated_sql": "SELECT SUM(amount) FROM transactions WHERE status = 'void'",
+      "correct": true,
+      "error": null
+    },
+    {
+      "id": "q14",
+      "question": "How many general ledger entries were recorded per fiscal quarter?",
+      "status": "ok",
+      "generated_sql": "SELECT fiscal_quarter, COUNT(*) AS entry_count FROM general_ledger GROUP BY fiscal_quarter ORDER BY fiscal_quarter;",
+      "correct": true,
+      "error": null
+    },
+    {
+      "id": "q15",
+      "question": "Which invoices are overdue and issued by a vendor in 'Germany'?",
+      "status": "execution_error",
+      "generated_sql": "SELECT invoice_id, invoice_number, vendor_id, issue_date, due_date, amount, status, line_item_description\nFROM invoices\nJOIN vendors ON invoices.vendor_id = vendors.vendor_id\nWHERE vendors.country = 'Germany'\n  AND invoices.due_date < date('now')",
+      "correct": false,
+      "error": "(sqlite3.OperationalError) ambiguous column name: vendor_id\n[SQL: SELECT invoice_id, invoice_number, vendor_id, issue_date, due_date, amount, status, line_item_description FROM invoices JOIN vendors ON invoices.vendor_id = vendors.vendor_id WHERE vendors.country = 'Germany' AND invoices.due_date < DATE('now') LIMIT 500]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)"
+    }
+  ]
+}

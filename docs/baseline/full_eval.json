@@ -1,0 +1,1695 @@
+{
+  "phase": "phase4_eval_suite",
+  "retrieval": {
+    "k": 3,
+    "precision_at_k": 0.3333,
+    "recall_at_k": 1.0,
+    "hits": 15,
+    "total": 15
+  },
+  "sql_execution_correctness": {
+    "passed": 12,
+    "total": 15,
+    "accuracy": 0.8
+  },
+  "routing_accuracy": {
+    "correct": 18,
+    "total": 30,
+    "accuracy": 0.6,
+    "rows": [
+      {
+        "id": "e01",
+        "question": "What is the company procurement approval threshold?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_rag",
+        "passed": true
+      },
+      {
+        "id": "e02",
+        "question": "How many signatures are required for contracts above 250k?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_sql",
+        "passed": false
+      },
+      {
+        "id": "e03",
+        "question": "What expense category must include original receipts?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_rag",
+        "passed": true
+      },
+      {
+        "id": "e04",
+        "question": "What is the reimbursement SLA for approved expenses?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_rag",
+        "passed": true
+      },
+      {
+        "id": "e05",
+        "question": "What is the announced gross margin target for FY2026?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_rag",
+        "passed": true
+      },
+      {
+        "id": "e06",
+        "question": "Which region showed fastest ARR growth in the latest call?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_sql",
+        "passed": false
+      },
+      {
+        "id": "e07",
+        "question": "When are vendor invoices due under Net terms in the MSA?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_rag",
+        "passed": true
+      },
+      {
+        "id": "e08",
+        "question": "What happens if invoice disputes are not raised in time?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_sql",
+        "passed": false
+      },
+      {
+        "id": "e09",
+        "question": "What concentration limit exists for cloud infrastructure spend?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_sql",
+        "passed": false
+      },
+      {
+        "id": "e10",
+        "question": "What cap applies to unresolved audit exceptions per quarter?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_sql",
+        "passed": false
+      },
+      {
+        "id": "e11",
+        "question": "Who approves emergency purchases over 50k?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_sql",
+        "passed": false
+      },
+      {
+        "id": "e12",
+        "question": "By when should managers approve expense reports?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_sql",
+        "passed": false
+      },
+      {
+        "id": "e13",
+        "question": "What retention expectation is stated for enterprise customers?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_rag",
+        "passed": true
+      },
+      {
+        "id": "e14",
+        "question": "What is the late payment fee percentage in vendor terms?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_sql",
+        "passed": false
+      },
+      {
+        "id": "e15",
+        "question": "What is the maximum single-vendor exposure threshold?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_sql",
+        "passed": false
+      },
+      {
+        "id": "e16",
+        "question": "How many invoices are overdue?",
+        "expected_route": "needs_sql",
+        "actual_route": "needs_sql",
+        "passed": true
+      },
+      {
+        "id": "e17",
+        "question": "What is the total amount of overdue invoices?",
+        "expected_route": "needs_sql",
+        "actual_route": "needs_sql",
+        "passed": true
+      },
+      {
+        "id": "e18",
+        "question": "How many pending transactions are there?",
+        "expected_route": "needs_sql",
+        "actual_route": "needs_sql",
+        "passed": true
+      },
+      {
+        "id": "e19",
+        "question": "How many vendors are based in India?",
+        "expected_route": "needs_sql",
+        "actual_route": "needs_sql",
+        "passed": true
+      },
+      {
+        "id": "e20",
+        "question": "What is average invoice amount?",
+        "expected_route": "needs_sql",
+        "actual_route": "needs_sql",
+        "passed": true
+      },
+      {
+        "id": "e21",
+        "question": "How many pending transactions and what approval threshold applies?",
+        "expected_route": "needs_both",
+        "actual_route": "needs_both",
+        "passed": true
+      },
+      {
+        "id": "e22",
+        "question": "Total overdue invoices and MSA payment terms?",
+        "expected_route": "needs_both",
+        "actual_route": "needs_both",
+        "passed": true
+      },
+      {
+        "id": "e23",
+        "question": "Vendor count in Germany and retention expectation?",
+        "expected_route": "needs_both",
+        "actual_route": "needs_both",
+        "passed": true
+      },
+      {
+        "id": "e24",
+        "question": "Top vendor by invoiced amount plus concentration cap?",
+        "expected_route": "needs_both",
+        "actual_route": "needs_sql",
+        "passed": false
+      },
+      {
+        "id": "e25",
+        "question": "Void transaction total and unresolved audit exception cap?",
+        "expected_route": "needs_both",
+        "actual_route": "needs_sql",
+        "passed": false
+      },
+      {
+        "id": "e26",
+        "question": "How many revenue accounts exist?",
+        "expected_route": "needs_sql",
+        "actual_route": "needs_sql",
+        "passed": true
+      },
+      {
+        "id": "e27",
+        "question": "What is the gross margin target for FY2026?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_rag",
+        "passed": true
+      },
+      {
+        "id": "e28",
+        "question": "What is the reimbursement timeline for approved expenses?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_rag",
+        "passed": true
+      },
+      {
+        "id": "e29",
+        "question": "What is late payment fee percent in MSA?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_rag",
+        "passed": true
+      },
+      {
+        "id": "e30",
+        "question": "What is max single-vendor exposure threshold?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_sql",
+        "passed": false
+      }
+    ]
+  },
+  "citation_correctness": {
+    "correct": 14,
+    "total": 30,
+    "accuracy": 0.4667,
+    "rows": [
+      {
+        "id": "e01",
+        "question": "What is the company procurement approval threshold?",
+        "passed": true,
+        "has_sql_citation": false,
+        "has_doc_citation": true,
+        "doc_sources": [
+          "docs/rag_corpus/procurement_policy.txt",
+          "docs/rag_corpus/vendor_msa_excerpt.txt",
+          "docs/rag_corpus/earnings_call_q2_2026.txt"
+        ],
+        "sql_type_ok": true,
+        "doc_type_ok": true,
+        "expected_source_present": true
+      },
+      {
+        "id": "e02",
+        "question": "How many signatures are required for contracts above 250k?",
+        "passed": false,
+        "has_sql_citation": false,
+        "has_doc_citation": false,
+        "doc_sources": [],
+        "sql_type_ok": true,
+        "doc_type_ok": false,
+        "expected_source_present": false
+      },
+      {
+        "id": "e03",
+        "question": "What expense category must include original receipts?",
+        "passed": true,
+        "has_sql_citation": false,
+        "has_doc_citation": true,
+        "doc_sources": [
+          "docs/rag_corpus/expense_policy.txt",
+          "docs/rag_corpus/vendor_msa_excerpt.txt",
+          "docs/rag_corpus/procurement_policy.txt"
+        ],
+        "sql_type_ok": true,
+        "doc_type_ok": true,
+        "expected_source_present": true
+      },
+      {
+        "id": "e04",
+        "question": "What is the reimbursement SLA for approved expenses?",
+        "passed": true,
+        "has_sql_citation": false,
+        "has_doc_citation": true,
+        "doc_sources": [
+          "docs/rag_corpus/procurement_policy.txt",
+          "docs/rag_corpus/vendor_msa_excerpt.txt",
+          "docs/rag_corpus/expense_policy.txt"
+        ],
+        "sql_type_ok": true,
+        "doc_type_ok": true,
+        "expected_source_present": true
+      },
+      {
+        "id": "e05",
+        "question": "What is the announced gross margin target for FY2026?",
+        "passed": true,
+        "has_sql_citation": false,
+        "has_doc_citation": true,
+        "doc_sources": [
+          "docs/rag_corpus/earnings_call_q2_2026.txt",
+          "docs/rag_corpus/procurement_policy.txt",
+          "docs/rag_corpus/vendor_msa_excerpt.txt"
+        ],
+        "sql_type_ok": true,
+        "doc_type_ok": true,
+        "expected_source_present": true
+      },
+      {
+        "id": "e06",
+        "question": "Which region showed fastest ARR growth in the latest call?",
+        "passed": false,
+        "has_sql_citation": false,
+        "has_doc_citation": false,
+        "doc_sources": [],
+        "sql_type_ok": true,
+        "doc_type_ok": false,
+        "expected_source_present": false
+      },
+      {
+        "id": "e07",
+        "question": "When are vendor invoices due under Net terms in the MSA?",
+        "passed": true,
+        "has_sql_citation": false,
+        "has_doc_citation": true,
+        "doc_sources": [
+          "docs/rag_corpus/vendor_msa_excerpt.txt",
+          "docs/rag_corpus/risk_committee_memo.txt",
+          "docs/rag_corpus/expense_policy.txt"
+        ],
+        "sql_type_ok": true,
+        "doc_type_ok": true,
+        "expected_source_present": true
+      },
+      {
+        "id": "e08",
+        "question": "What happens if invoice disputes are not raised in time?",
+        "passed": false,
+        "has_sql_citation": false,
+        "has_doc_citation": false,
+        "doc_sources": [],
+        "sql_type_ok": true,
+        "doc_type_ok": false,
+        "expected_source_present": false
+      },
+      {
+        "id": "e09",
+        "question": "What concentration limit exists for cloud infrastructure spend?",
+        "passed": false,
+        "has_sql_citation": false,
+        "has_doc_citation": false,
+        "doc_sources": [],
+        "sql_type_ok": true,
+        "doc_type_ok": false,
+        "expected_source_present": false
+      },
+      {
+        "id": "e10",
+        "question": "What cap applies to unresolved audit exceptions per quarter?",
+        "passed": false,
+        "has_sql_citation": false,
+        "has_doc_citation": false,
+        "doc_sources": [],
+        "sql_type_ok": true,
+        "doc_type_ok": false,
+        "expected_source_present": false
+      },
+      {
+        "id": "e11",
+        "question": "Who approves emergency purchases over 50k?",
+        "passed": false,
+        "has_sql_citation": false,
+        "has_doc_citation": false,
+        "doc_sources": [],
+        "sql_type_ok": true,
+        "doc_type_ok": false,
+        "expected_source_present": false
+      },
+      {
+        "id": "e12",
+        "question": "By when should managers approve expense reports?",
+        "passed": false,
+        "has_sql_citation": false,
+        "has_doc_citation": false,
+        "doc_sources": [],
+        "sql_type_ok": true,
+        "doc_type_ok": false,
+        "expected_source_present": false
+      },
+      {
+        "id": "e13",
+        "question": "What retention expectation is stated for enterprise customers?",
+        "passed": true,
+        "has_sql_citation": false,
+        "has_doc_citation": true,
+        "doc_sources": [
+          "docs/rag_corpus/earnings_call_q2_2026.txt",
+          "docs/rag_corpus/vendor_msa_excerpt.txt",
+          "docs/rag_corpus/expense_policy.txt"
+        ],
+        "sql_type_ok": true,
+        "doc_type_ok": true,
+        "expected_source_present": true
+      },
+      {
+        "id": "e14",
+        "question": "What is the late payment fee percentage in vendor terms?",
+        "passed": false,
+        "has_sql_citation": false,
+        "has_doc_citation": false,
+        "doc_sources": [],
+        "sql_type_ok": true,
+        "doc_type_ok": false,
+        "expected_source_present": false
+      },
+      {
+        "id": "e15",
+        "question": "What is the maximum single-vendor exposure threshold?",
+        "passed": false,
+        "has_sql_citation": false,
+        "has_doc_citation": false,
+        "doc_sources": [],
+        "sql_type_ok": true,
+        "doc_type_ok": false,
+        "expected_source_present": false
+      },
+      {
+        "id": "e16",
+        "question": "How many invoices are overdue?",
+        "passed": true,
+        "has_sql_citation": true,
+        "has_doc_citation": false,
+        "doc_sources": [],
+        "sql_type_ok": true,
+        "doc_type_ok": true,
+        "expected_source_present": null
+      },
+      {
+        "id": "e17",
+        "question": "What is the total amount of overdue invoices?",
+        "passed": true,
+        "has_sql_citation": true,
+        "has_doc_citation": false,
+        "doc_sources": [],
+        "sql_type_ok": true,
+        "doc_type_ok": true,
+        "expected_source_present": null
+      },
+      {
+        "id": "e18",
+        "question": "How many pending transactions are there?",
+        "passed": true,
+        "has_sql_citation": true,
+        "has_doc_citation": false,
+        "doc_sources": [],
+        "sql_type_ok": true,
+        "doc_type_ok": true,
+        "expected_source_present": null
+      },
+      {
+        "id": "e19",
+        "question": "How many vendors are based in India?",
+        "passed": true,
+        "has_sql_citation": true,
+        "has_doc_citation": false,
+        "doc_sources": [],
+        "sql_type_ok": true,
+        "doc_type_ok": true,
+        "expected_source_present": null
+      },
+      {
+        "id": "e20",
+        "question": "What is average invoice amount?",
+        "passed": true,
+        "has_sql_citation": true,
+        "has_doc_citation": false,
+        "doc_sources": [],
+        "sql_type_ok": true,
+        "doc_type_ok": true,
+        "expected_source_present": null
+      },
+      {
+        "id": "e21",
+        "question": "How many pending transactions and what approval threshold applies?",
+        "passed": false,
+        "has_sql_citation": false,
+        "has_doc_citation": true,
+        "doc_sources": [
+          "docs/rag_corpus/procurement_policy.txt",
+          "docs/rag_corpus/earnings_call_q2_2026.txt",
+          "docs/rag_corpus/expense_policy.txt"
+        ],
+        "sql_type_ok": false,
+        "doc_type_ok": true,
+        "expected_source_present": true
+      },
+      {
+        "id": "e22",
+        "question": "Total overdue invoices and MSA payment terms?",
+        "passed": false,
+        "has_sql_citation": false,
+        "has_doc_citation": true,
+        "doc_sources": [
+          "docs/rag_corpus/vendor_msa_excerpt.txt",
+          "docs/rag_corpus/risk_committee_memo.txt",
+          "docs/rag_corpus/expense_policy.txt"
+        ],
+        "sql_type_ok": false,
+        "doc_type_ok": true,
+        "expected_source_present": true
+      },
+      {
+        "id": "e23",
+        "question": "Vendor count in Germany and retention expectation?",
+        "passed": false,
+        "has_sql_citation": false,
+        "has_doc_citation": true,
+        "doc_sources": [
+          "docs/rag_corpus/risk_committee_memo.txt",
+          "docs/rag_corpus/earnings_call_q2_2026.txt",
+          "docs/rag_corpus/expense_policy.txt"
+        ],
+        "sql_type_ok": false,
+        "doc_type_ok": true,
+        "expected_source_present": true
+      },
+      {
+        "id": "e24",
+        "question": "Top vendor by invoiced amount plus concentration cap?",
+        "passed": false,
+        "has_sql_citation": false,
+        "has_doc_citation": false,
+        "doc_sources": [],
+        "sql_type_ok": false,
+        "doc_type_ok": false,
+        "expected_source_present": false
+      },
+      {
+        "id": "e25",
+        "question": "Void transaction total and unresolved audit exception cap?",
+        "passed": false,
+        "has_sql_citation": false,
+        "has_doc_citation": false,
+        "doc_sources": [],
+        "sql_type_ok": false,
+        "doc_type_ok": false,
+        "expected_source_present": false
+      },
+      {
+        "id": "e26",
+        "question": "How many revenue accounts exist?",
+        "passed": true,
+        "has_sql_citation": true,
+        "has_doc_citation": false,
+        "doc_sources": [],
+        "sql_type_ok": true,
+        "doc_type_ok": true,
+        "expected_source_present": null
+      },
+      {
+        "id": "e27",
+        "question": "What is the gross margin target for FY2026?",
+        "passed": true,
+        "has_sql_citation": false,
+        "has_doc_citation": true,
+        "doc_sources": [
+          "docs/rag_corpus/earnings_call_q2_2026.txt",
+          "docs/rag_corpus/procurement_policy.txt",
+          "docs/rag_corpus/vendor_msa_excerpt.txt"
+        ],
+        "sql_type_ok": true,
+        "doc_type_ok": true,
+        "expected_source_present": true
+      },
+      {
+        "id": "e28",
+        "question": "What is the reimbursement timeline for approved expenses?",
+        "passed": false,
+        "has_sql_citation": false,
+        "has_doc_citation": true,
+        "doc_sources": [
+          "docs/rag_corpus/procurement_policy.txt",
+          "docs/rag_corpus/vendor_msa_excerpt.txt",
+          "docs/rag_corpus/earnings_call_q2_2026.txt"
+        ],
+        "sql_type_ok": true,
+        "doc_type_ok": true,
+        "expected_source_present": false
+      },
+      {
+        "id": "e29",
+        "question": "What is late payment fee percent in MSA?",
+        "passed": true,
+        "has_sql_citation": false,
+        "has_doc_citation": true,
+        "doc_sources": [
+          "docs/rag_corpus/vendor_msa_excerpt.txt",
+          "docs/rag_corpus/earnings_call_q2_2026.txt",
+          "docs/rag_corpus/risk_committee_memo.txt"
+        ],
+        "sql_type_ok": true,
+        "doc_type_ok": true,
+        "expected_source_present": true
+      },
+      {
+        "id": "e30",
+        "question": "What is max single-vendor exposure threshold?",
+        "passed": false,
+        "has_sql_citation": false,
+        "has_doc_citation": false,
+        "doc_sources": [],
+        "sql_type_ok": true,
+        "doc_type_ok": false,
+        "expected_source_present": false
+      }
+    ]
+  },
+  "answer_faithfulness": {
+    "faithful": 19,
+    "total": 30,
+    "rate": 0.6333,
+    "judgments": [
+      {
+        "id": "e01",
+        "question": "What is the company procurement approval threshold?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_rag",
+        "route_correct": true,
+        "sql_status": null,
+        "rag_hits": 3,
+        "citations": {
+          "has_sql_citation": false,
+          "has_doc_citation": true,
+          "doc_sources": [
+            "docs/rag_corpus/procurement_policy.txt",
+            "docs/rag_corpus/vendor_msa_excerpt.txt",
+            "docs/rag_corpus/earnings_call_q2_2026.txt"
+          ],
+          "sql_type_ok": true,
+          "doc_type_ok": true,
+          "expected_source_present": true,
+          "passed": true
+        },
+        "citation_correct": true,
+        "faithfulness": {
+          "score": 5,
+          "faithful": true,
+          "rationale": "The answer cites specific thresholds (25,000\u202fUSD and 50,000\u202fUSD) directly from the provided procurement policy document. No invented figures are introduced, and the claims are supported by the evidence excerpts. All cited values are grounded in the supplied text, meeting the rubric criteria for full groundedness.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 0.99
+      },
+      {
+        "id": "e02",
+        "question": "How many signatures are required for contracts above 250k?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_sql",
+        "route_correct": false,
+        "sql_status": "not_answerable",
+        "rag_hits": 0,
+        "citations": {
+          "has_sql_citation": false,
+          "has_doc_citation": false,
+          "doc_sources": [],
+          "sql_type_ok": true,
+          "doc_type_ok": false,
+          "expected_source_present": false,
+          "passed": false
+        },
+        "citation_correct": false,
+        "faithfulness": {
+          "score": 1,
+          "faithful": false,
+          "rationale": "The answer does not reference any evidence and provides no justification for the claim. It fails to meet the criteria of being grounded in the provided evidence, contains no specific values, and lacks relevant citations. Therefore it receives the lowest score.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 5447.77
+      },
+      {
+        "id": "e03",
+        "question": "What expense category must include original receipts?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_rag",
+        "route_correct": true,
+        "sql_status": null,
+        "rag_hits": 3,
+        "citations": {
+          "has_sql_citation": false,
+          "has_doc_citation": true,
+          "doc_sources": [
+            "docs/rag_corpus/expense_policy.txt",
+            "docs/rag_corpus/vendor_msa_excerpt.txt",
+            "docs/rag_corpus/procurement_policy.txt"
+          ],
+          "sql_type_ok": true,
+          "doc_type_ok": true,
+          "expected_source_present": true,
+          "passed": true
+        },
+        "citation_correct": true,
+        "faithfulness": {
+          "score": 5,
+          "faithful": true,
+          "rationale": "The answer directly cites the policy text that states travel and client entertainment expenses must include original itemized receipts, matching the evidence provided. No additional or fabricated information is included, and the citation is relevant to the claim.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 7.25
+      },
+      {
+        "id": "e04",
+        "question": "What is the reimbursement SLA for approved expenses?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_rag",
+        "route_correct": true,
+        "sql_status": null,
+        "rag_hits": 3,
+        "citations": {
+          "has_sql_citation": false,
+          "has_doc_citation": true,
+          "doc_sources": [
+            "docs/rag_corpus/procurement_policy.txt",
+            "docs/rag_corpus/vendor_msa_excerpt.txt",
+            "docs/rag_corpus/expense_policy.txt"
+          ],
+          "sql_type_ok": true,
+          "doc_type_ok": true,
+          "expected_source_present": true,
+          "passed": true
+        },
+        "citation_correct": true,
+        "faithfulness": {
+          "score": 1,
+          "faithful": "The answer does not address the reimbursement SLA for approved expenses. It only summarizes procurement approval thresholds and does not mention the 10\u2011business\u2011day reimbursement period stated in the expense policy evidence. No citations are provided for the claim, and the content is not grounded in the supplied documents.",
+          "rationale": "The answer fails to answer the question, omits the relevant evidence, and contains no citations. It is not grounded in the provided evidence.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 3.64
+      },
+      {
+        "id": "e05",
+        "question": "What is the announced gross margin target for FY2026?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_rag",
+        "route_correct": true,
+        "sql_status": null,
+        "rag_hits": 3,
+        "citations": {
+          "has_sql_citation": false,
+          "has_doc_citation": true,
+          "doc_sources": [
+            "docs/rag_corpus/earnings_call_q2_2026.txt",
+            "docs/rag_corpus/procurement_policy.txt",
+            "docs/rag_corpus/vendor_msa_excerpt.txt"
+          ],
+          "sql_type_ok": true,
+          "doc_type_ok": true,
+          "expected_source_present": true,
+          "passed": true
+        },
+        "citation_correct": true,
+        "faithfulness": {
+          "score": 5,
+          "faithful": true,
+          "rationale": "The answer directly quotes the gross margin target of 72% from the provided earnings call excerpt, which is the only claim made. No additional or fabricated information is included, and the citation is relevant to the claim.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 4.95
+      },
+      {
+        "id": "e06",
+        "question": "Which region showed fastest ARR growth in the latest call?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_sql",
+        "route_correct": false,
+        "sql_status": "not_answerable",
+        "rag_hits": 0,
+        "citations": {
+          "has_sql_citation": false,
+          "has_doc_citation": false,
+          "doc_sources": [],
+          "sql_type_ok": true,
+          "doc_type_ok": false,
+          "expected_source_present": false,
+          "passed": false
+        },
+        "citation_correct": false,
+        "faithfulness": {
+          "score": 1,
+          "faithful": "No evidence was provided to support the answer, and the answer does not reference any data or citations. It fails to meet the criteria of being grounded in the provided evidence.",
+          "rationale": "The answer lacks any supporting evidence, does not cite relevant sources, and does not provide specific values or claims that can be verified. Therefore it is not grounded in the provided evidence.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 5553.0
+      },
+      {
+        "id": "e07",
+        "question": "When are vendor invoices due under Net terms in the MSA?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_rag",
+        "route_correct": true,
+        "sql_status": null,
+        "rag_hits": 3,
+        "citations": {
+          "has_sql_citation": false,
+          "has_doc_citation": true,
+          "doc_sources": [
+            "docs/rag_corpus/vendor_msa_excerpt.txt",
+            "docs/rag_corpus/risk_committee_memo.txt",
+            "docs/rag_corpus/expense_policy.txt"
+          ],
+          "sql_type_ok": true,
+          "doc_type_ok": true,
+          "expected_source_present": true,
+          "passed": true
+        },
+        "citation_correct": true,
+        "faithfulness": {
+          "score": 5,
+          "faithful": true,
+          "rationale": "The answer correctly states that vendor invoices are due Net 45 from the invoice issue date, which is directly supported by the provided evidence from the Vendor Master Services Agreement excerpt. No additional or fabricated information is included, and the citation is relevant to the claim.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 6.76
+      },
+      {
+        "id": "e08",
+        "question": "What happens if invoice disputes are not raised in time?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_sql",
+        "route_correct": false,
+        "sql_status": "not_answerable",
+        "rag_hits": 0,
+        "citations": {
+          "has_sql_citation": false,
+          "has_doc_citation": false,
+          "doc_sources": [],
+          "sql_type_ok": true,
+          "doc_type_ok": false,
+          "expected_source_present": false,
+          "passed": false
+        },
+        "citation_correct": false,
+        "faithfulness": {
+          "score": 1,
+          "faithful": "No",
+          "rationale": "The answer does not reference any provided evidence and introduces a claim that is unsupported by the evidence (which is empty). Therefore it is not grounded in the provided evidence.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 5465.32
+      },
+      {
+        "id": "e09",
+        "question": "What concentration limit exists for cloud infrastructure spend?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_sql",
+        "route_correct": false,
+        "sql_status": "not_answerable",
+        "rag_hits": 0,
+        "citations": {
+          "has_sql_citation": false,
+          "has_doc_citation": false,
+          "doc_sources": [],
+          "sql_type_ok": true,
+          "doc_type_ok": false,
+          "expected_source_present": false,
+          "passed": false
+        },
+        "citation_correct": false,
+        "faithfulness": {
+          "score": 1,
+          "faithful": false,
+          "rationale": "The answer does not provide any information related to the question and contains no evidence or citations. It fails to address the concentration limit for cloud infrastructure spend and is not grounded in any provided evidence.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 5375.07
+      },
+      {
+        "id": "e10",
+        "question": "What cap applies to unresolved audit exceptions per quarter?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_sql",
+        "route_correct": false,
+        "sql_status": "not_answerable",
+        "rag_hits": 0,
+        "citations": {
+          "has_sql_citation": false,
+          "has_doc_citation": false,
+          "doc_sources": [],
+          "sql_type_ok": true,
+          "doc_type_ok": false,
+          "expected_source_present": false,
+          "passed": false
+        },
+        "citation_correct": false,
+        "faithfulness": {
+          "score": 1,
+          "faithful": false,
+          "rationale": "The answer does not reference any provided evidence and does not address the question about the cap on unresolved audit exceptions per quarter. It is not grounded in the evidence (which is empty) and therefore fails all rubric criteria.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 3648.89
+      },
+      {
+        "id": "e11",
+        "question": "Who approves emergency purchases over 50k?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_sql",
+        "route_correct": false,
+        "sql_status": "not_answerable",
+        "rag_hits": 0,
+        "citations": {
+          "has_sql_citation": false,
+          "has_doc_citation": false,
+          "doc_sources": [],
+          "sql_type_ok": true,
+          "doc_type_ok": false,
+          "expected_source_present": false,
+          "passed": false
+        },
+        "citation_correct": false,
+        "faithfulness": {
+          "score": 1,
+          "faithful": false,
+          "rationale": "The answer does not provide any information about who approves emergency purchases over 50k and contains no evidence or citations. It fails to address the question and is not grounded in any provided evidence.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 4569.26
+      },
+      {
+        "id": "e12",
+        "question": "By when should managers approve expense reports?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_sql",
+        "route_correct": false,
+        "sql_status": "not_answerable",
+        "rag_hits": 0,
+        "citations": {
+          "has_sql_citation": false,
+          "has_doc_citation": false,
+          "doc_sources": [],
+          "sql_type_ok": true,
+          "doc_type_ok": false,
+          "expected_source_present": false,
+          "passed": false
+        },
+        "citation_correct": false,
+        "faithfulness": {
+          "score": 1,
+          "faithful": false,
+          "rationale": "The answer does not address the question and provides no evidence or citations. It is not grounded in any provided evidence, and it does not contain any relevant or accurate information regarding the approval deadline for expense reports.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 3737.35
+      },
+      {
+        "id": "e13",
+        "question": "What retention expectation is stated for enterprise customers?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_rag",
+        "route_correct": true,
+        "sql_status": null,
+        "rag_hits": 3,
+        "citations": {
+          "has_sql_citation": false,
+          "has_doc_citation": true,
+          "doc_sources": [
+            "docs/rag_corpus/earnings_call_q2_2026.txt",
+            "docs/rag_corpus/vendor_msa_excerpt.txt",
+            "docs/rag_corpus/expense_policy.txt"
+          ],
+          "sql_type_ok": true,
+          "doc_type_ok": true,
+          "expected_source_present": true,
+          "passed": true
+        },
+        "citation_correct": true,
+        "faithfulness": {
+          "score": 5,
+          "faithful": "The answer directly quotes the retention figures (above 97% currently and expected to stay above 96% next year) from the provided earnings call excerpt. No additional or fabricated information is included, and the citation is relevant to the claim.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 44.29
+      },
+      {
+        "id": "e14",
+        "question": "What is the late payment fee percentage in vendor terms?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_sql",
+        "route_correct": false,
+        "sql_status": "not_answerable",
+        "rag_hits": 0,
+        "citations": {
+          "has_sql_citation": false,
+          "has_doc_citation": false,
+          "doc_sources": [],
+          "sql_type_ok": true,
+          "doc_type_ok": false,
+          "expected_source_present": false,
+          "passed": false
+        },
+        "citation_correct": false,
+        "faithfulness": {
+          "score": 1,
+          "faithful": false,
+          "rationale": "The answer does not provide the requested late payment fee percentage and offers no evidence or citations. It merely states that no usable result was returned, which is not grounded in any provided evidence.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 4341.89
+      },
+      {
+        "id": "e15",
+        "question": "What is the maximum single-vendor exposure threshold?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_sql",
+        "route_correct": false,
+        "sql_status": "rejected",
+        "rag_hits": 0,
+        "citations": {
+          "has_sql_citation": false,
+          "has_doc_citation": false,
+          "doc_sources": [],
+          "sql_type_ok": true,
+          "doc_type_ok": false,
+          "expected_source_present": false,
+          "passed": false
+        },
+        "citation_correct": false,
+        "faithfulness": {
+          "score": 1,
+          "faithful": false,
+          "rationale": "The answer does not provide the requested threshold value and offers no evidence or citations. It fails to be grounded in any provided evidence, contains no specific data, and does not reference relevant sources. Therefore it is not faithful to the question.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 4564.89
+      },
+      {
+        "id": "e16",
+        "question": "How many invoices are overdue?",
+        "expected_route": "needs_sql",
+        "actual_route": "needs_sql",
+        "route_correct": true,
+        "sql_status": "ok",
+        "rag_hits": 0,
+        "citations": {
+          "has_sql_citation": true,
+          "has_doc_citation": false,
+          "doc_sources": [],
+          "sql_type_ok": true,
+          "doc_type_ok": true,
+          "expected_source_present": null,
+          "passed": true
+        },
+        "citation_correct": true,
+        "faithfulness": {
+          "score": 5,
+          "faithful": "The answer directly reflects the value provided in the evidence (175 overdue invoices) and does not introduce any additional or fabricated information. The citation is relevant and supports the claim.",
+          "rationale": "The response is fully grounded in the provided evidence, contains no invented specifics, and cites the correct source.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 4650.71
+      },
+      {
+        "id": "e17",
+        "question": "What is the total amount of overdue invoices?",
+        "expected_route": "needs_sql",
+        "actual_route": "needs_sql",
+        "route_correct": true,
+        "sql_status": "ok",
+        "rag_hits": 0,
+        "citations": {
+          "has_sql_citation": true,
+          "has_doc_citation": false,
+          "doc_sources": [],
+          "sql_type_ok": true,
+          "doc_type_ok": true,
+          "expected_source_present": null,
+          "passed": true
+        },
+        "citation_correct": true,
+        "faithfulness": {
+          "score": 5,
+          "faithful": "Yes",
+          "rationale": "The answer directly reflects the value provided in the evidence, which is the result of the SQL query. No additional or fabricated information is included, and the citation is relevant to the claim.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 5136.33
+      },
+      {
+        "id": "e18",
+        "question": "How many pending transactions are there?",
+        "expected_route": "needs_sql",
+        "actual_route": "needs_sql",
+        "route_correct": true,
+        "sql_status": "ok",
+        "rag_hits": 0,
+        "citations": {
+          "has_sql_citation": true,
+          "has_doc_citation": false,
+          "doc_sources": [],
+          "sql_type_ok": true,
+          "doc_type_ok": true,
+          "expected_source_present": null,
+          "passed": true
+        },
+        "citation_correct": true,
+        "faithfulness": {
+          "score": 5,
+          "faithful": true,
+          "rationale": "The answer directly reflects the evidence provided, stating that there are 98 pending transactions, which matches the SQL result. No additional or fabricated information is included, and the citation is relevant to the claim.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 3679.86
+      },
+      {
+        "id": "e19",
+        "question": "How many vendors are based in India?",
+        "expected_route": "needs_sql",
+        "actual_route": "needs_sql",
+        "route_correct": true,
+        "sql_status": "ok",
+        "rag_hits": 0,
+        "citations": {
+          "has_sql_citation": true,
+          "has_doc_citation": false,
+          "doc_sources": [],
+          "sql_type_ok": true,
+          "doc_type_ok": true,
+          "expected_source_present": null,
+          "passed": true
+        },
+        "citation_correct": true,
+        "faithfulness": {
+          "score": 5,
+          "faithful": "The answer directly reflects the SQL result provided in the evidence, stating that there are 4 vendors based in India. No additional or fabricated information is included, and the citation is relevant to the claim.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 3344.01
+      },
+      {
+        "id": "e20",
+        "question": "What is average invoice amount?",
+        "expected_route": "needs_sql",
+        "actual_route": "needs_sql",
+        "route_correct": true,
+        "sql_status": "ok",
+        "rag_hits": 0,
+        "citations": {
+          "has_sql_citation": true,
+          "has_doc_citation": false,
+          "doc_sources": [],
+          "sql_type_ok": true,
+          "doc_type_ok": true,
+          "expected_source_present": null,
+          "passed": true
+        },
+        "citation_correct": true,
+        "faithfulness": {
+          "score": 5,
+          "faithful": "The answer directly reflects the SQL result provided in the evidence, with no additional or fabricated information. The citation is relevant and supports the claim.",
+          "rationale": "The answer is fully grounded in the provided evidence, contains no invented values, and cites the correct source.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 5461.69
+      },
+      {
+        "id": "e21",
+        "question": "How many pending transactions and what approval threshold applies?",
+        "expected_route": "needs_both",
+        "actual_route": "needs_both",
+        "route_correct": true,
+        "sql_status": "not_answerable",
+        "rag_hits": 3,
+        "citations": {
+          "has_sql_citation": false,
+          "has_doc_citation": true,
+          "doc_sources": [
+            "docs/rag_corpus/procurement_policy.txt",
+            "docs/rag_corpus/earnings_call_q2_2026.txt",
+            "docs/rag_corpus/expense_policy.txt"
+          ],
+          "sql_type_ok": false,
+          "doc_type_ok": true,
+          "expected_source_present": true,
+          "passed": false
+        },
+        "citation_correct": false,
+        "faithfulness": {
+          "score": 2,
+          "faithful": "The answer correctly cites the procurement policy for the approval threshold (purchases above 50,000\u202fUSD require VP Finance approval, emergency purchases above 50,000\u202fUSD require CFO approval within 24\u202fhours, and purchases above 250,000\u202fUSD require CFO and COO signatures). However, it does not provide any information about the number of pending transactions, merely stating that the ledger data was unusable. Thus, while the threshold claim is grounded in the provided evidence, the answer is incomplete with respect to the question\u2019s first part.",
+          "rationale": "The answer uses relevant citations for the approval threshold but fails to address the number of pending transactions, leaving the question partially unanswered. No fabricated values are present, but the lack of a complete answer reduces the overall groundedness score.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 4798.09
+      },
+      {
+        "id": "e22",
+        "question": "Total overdue invoices and MSA payment terms?",
+        "expected_route": "needs_both",
+        "actual_route": "needs_both",
+        "route_correct": true,
+        "sql_status": "not_answerable",
+        "rag_hits": 3,
+        "citations": {
+          "has_sql_citation": false,
+          "has_doc_citation": true,
+          "doc_sources": [
+            "docs/rag_corpus/vendor_msa_excerpt.txt",
+            "docs/rag_corpus/risk_committee_memo.txt",
+            "docs/rag_corpus/expense_policy.txt"
+          ],
+          "sql_type_ok": false,
+          "doc_type_ok": true,
+          "expected_source_present": true,
+          "passed": false
+        },
+        "citation_correct": false,
+        "faithfulness": {
+          "score": 5,
+          "faithful": "The answer accurately reflects the information provided in the evidence. It cites the Vendor Master Services Agreement excerpt for the payment terms (Net\u202f45, 1.5\u202f% late fee, 20\u2011day dispute window) and correctly notes that no usable ledger data was returned, avoiding any invented figures. All claims are grounded in the supplied documents and the citations are directly relevant to the statements made.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 7257.9
+      },
+      {
+        "id": "e23",
+        "question": "Vendor count in Germany and retention expectation?",
+        "expected_route": "needs_both",
+        "actual_route": "needs_both",
+        "route_correct": true,
+        "sql_status": "not_answerable",
+        "rag_hits": 3,
+        "citations": {
+          "has_sql_citation": false,
+          "has_doc_citation": true,
+          "doc_sources": [
+            "docs/rag_corpus/risk_committee_memo.txt",
+            "docs/rag_corpus/earnings_call_q2_2026.txt",
+            "docs/rag_corpus/expense_policy.txt"
+          ],
+          "sql_type_ok": false,
+          "doc_type_ok": true,
+          "expected_source_present": true,
+          "passed": false
+        },
+        "citation_correct": false,
+        "faithfulness": {
+          "score": 1,
+          "faithful": false,
+          "rationale": "The answer does not provide the requested vendor count in Germany, nor does it address the retention expectation directly. It only cites a memo about vendor concentration limits and a policy about expense reporting, none of which answer the question. Therefore the response is not grounded in the provided evidence for the specific query.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 5576.15
+      },
+      {
+        "id": "e24",
+        "question": "Top vendor by invoiced amount plus concentration cap?",
+        "expected_route": "needs_both",
+        "actual_route": "needs_sql",
+        "route_correct": false,
+        "sql_status": "not_answerable",
+        "rag_hits": 0,
+        "citations": {
+          "has_sql_citation": false,
+          "has_doc_citation": false,
+          "doc_sources": [],
+          "sql_type_ok": false,
+          "doc_type_ok": false,
+          "expected_source_present": false,
+          "passed": false
+        },
+        "citation_correct": false,
+        "faithfulness": {
+          "score": 1,
+          "faithful": false,
+          "rationale": "The answer claims that the structured ledger data did not return a usable result, but no evidence or citations are provided to support this claim. The response is not grounded in any provided evidence and contains no specific values or references, violating the rubric criteria for groundedness.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 4739.47
+      },
+      {
+        "id": "e25",
+        "question": "Void transaction total and unresolved audit exception cap?",
+        "expected_route": "needs_both",
+        "actual_route": "needs_sql",
+        "route_correct": false,
+        "sql_status": "not_answerable",
+        "rag_hits": 0,
+        "citations": {
+          "has_sql_citation": false,
+          "has_doc_citation": false,
+          "doc_sources": [],
+          "sql_type_ok": false,
+          "doc_type_ok": false,
+          "expected_source_present": false,
+          "passed": false
+        },
+        "citation_correct": false,
+        "faithfulness": {
+          "score": 1,
+          "faithful": false,
+          "rationale": "The answer provides no evidence or citations and does not reference any provided data. It fails to ground the claim in the evidence, violating the rubric\u2019s requirement that the answer be based solely on the supplied evidence.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 5953.1
+      },
+      {
+        "id": "e26",
+        "question": "How many revenue accounts exist?",
+        "expected_route": "needs_sql",
+        "actual_route": "needs_sql",
+        "route_correct": true,
+        "sql_status": "ok",
+        "rag_hits": 0,
+        "citations": {
+          "has_sql_citation": true,
+          "has_doc_citation": false,
+          "doc_sources": [],
+          "sql_type_ok": true,
+          "doc_type_ok": true,
+          "expected_source_present": null,
+          "passed": true
+        },
+        "citation_correct": true,
+        "faithfulness": {
+          "score": 5,
+          "faithful": true,
+          "rationale": "The answer directly reflects the SQL result provided in the evidence, stating that there are 2 revenue accounts. No additional or fabricated information is included, and the citation is relevant to the claim.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 4839.02
+      },
+      {
+        "id": "e27",
+        "question": "What is the gross margin target for FY2026?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_rag",
+        "route_correct": true,
+        "sql_status": null,
+        "rag_hits": 3,
+        "citations": {
+          "has_sql_citation": false,
+          "has_doc_citation": true,
+          "doc_sources": [
+            "docs/rag_corpus/earnings_call_q2_2026.txt",
+            "docs/rag_corpus/procurement_policy.txt",
+            "docs/rag_corpus/vendor_msa_excerpt.txt"
+          ],
+          "sql_type_ok": true,
+          "doc_type_ok": true,
+          "expected_source_present": true,
+          "passed": true
+        },
+        "citation_correct": true,
+        "faithfulness": {
+          "score": 5,
+          "faithful": true,
+          "rationale": "The answer directly quotes the gross margin target of 72% from the provided earnings call excerpt, which is the only claim made. No additional or fabricated information is included, and the citation is relevant to the claim.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 77.68
+      },
+      {
+        "id": "e28",
+        "question": "What is the reimbursement timeline for approved expenses?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_rag",
+        "route_correct": true,
+        "sql_status": null,
+        "rag_hits": 3,
+        "citations": {
+          "has_sql_citation": false,
+          "has_doc_citation": true,
+          "doc_sources": [
+            "docs/rag_corpus/procurement_policy.txt",
+            "docs/rag_corpus/vendor_msa_excerpt.txt",
+            "docs/rag_corpus/earnings_call_q2_2026.txt"
+          ],
+          "sql_type_ok": true,
+          "doc_type_ok": true,
+          "expected_source_present": false,
+          "passed": false
+        },
+        "citation_correct": false,
+        "faithfulness": {
+          "score": 1,
+          "faithful": "The answer does not reference any evidence that addresses reimbursement timelines. It cites approval thresholds from the procurement policy, which are unrelated to reimbursement schedules, and provides no citations. Therefore the response is not grounded in the provided evidence.",
+          "rationale": "The answer fails to meet all rubric criteria: it is not grounded in the evidence, includes fabricated claims about reimbursement timelines, and lacks relevant citations.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 59.19
+      },
+      {
+        "id": "e29",
+        "question": "What is late payment fee percent in MSA?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_rag",
+        "route_correct": true,
+        "sql_status": null,
+        "rag_hits": 3,
+        "citations": {
+          "has_sql_citation": false,
+          "has_doc_citation": true,
+          "doc_sources": [
+            "docs/rag_corpus/vendor_msa_excerpt.txt",
+            "docs/rag_corpus/earnings_call_q2_2026.txt",
+            "docs/rag_corpus/risk_committee_memo.txt"
+          ],
+          "sql_type_ok": true,
+          "doc_type_ok": true,
+          "expected_source_present": true,
+          "passed": true
+        },
+        "citation_correct": true,
+        "faithfulness": {
+          "score": 5,
+          "faithful": true,
+          "rationale": "The answer states that the late payment fee is 1.5 percent per month, which directly matches the evidence from the Vendor Master Services Agreement excerpt. No additional or fabricated information is included, and the citation is relevant to the claim.",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 7.59
+      },
+      {
+        "id": "e30",
+        "question": "What is max single-vendor exposure threshold?",
+        "expected_route": "needs_rag",
+        "actual_route": "needs_sql",
+        "route_correct": false,
+        "sql_status": "rejected",
+        "rag_hits": 0,
+        "citations": {
+          "has_sql_citation": false,
+          "has_doc_citation": false,
+          "doc_sources": [],
+          "sql_type_ok": true,
+          "doc_type_ok": false,
+          "expected_source_present": false,
+          "passed": false
+        },
+        "citation_correct": false,
+        "faithfulness": {
+          "score": 1,
+          "faithful": false,
+          "rationale": "The answer does not provide any evidence or citations to support the claim that the structured ledger data did not return a usable result. It fails to reference any source, and therefore is not grounded in the provided evidence (which is empty).",
+          "rubric": {
+            "criteria": [
+              "Answer is grounded in provided evidence only",
+              "No fabricated specific values",
+              "Citations are relevant to claims"
+            ],
+            "scale": "1-5"
+          },
+          "judge_mode": "llm"
+        },
+        "latency_ms": 5206.13
+      }
+    ]
+  },
+  "latency": {
+    "p50_ms": 4567.08,
+    "mean_ms": 3451.94,
+    "max_ms": 7257.9,
+    "total_cases": 30
+  }
+}

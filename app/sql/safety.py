@@ -41,7 +41,7 @@ from app.sql.schema_registry import ALLOWLIST
 _ALLOWED_FUNCTIONS = {
     "sum", "count", "avg", "min", "max", "round", "abs",
     "coalesce", "cast", "strftime", "date", "julianday",
-    "upper", "lower", "substr", "length", "extract",
+    "upper", "lower", "substr", "substring", "length", "extract",
 }
 
 # Statement / expression types that are an automatic reject regardless
@@ -100,6 +100,12 @@ def validate_sql(raw_sql: str, row_limit: int | None = None) -> ValidationResult
         if isinstance(node_obj, _FORBIDDEN_EXPR_TYPES):
             violations.append(f"Forbidden construct: {type(node_obj).__name__}")
 
+    # A bare * would bypass the column allowlist. COUNT(*) is fine; any
+    # other Star (including t.*) is rejected.
+    for star in tree.find_all(exp.Star):
+        if not isinstance(star.parent, exp.Count):
+            violations.append("SELECT * is not allowed; list columns explicitly.")
+
     # Table allowlist
     for table in tree.find_all(exp.Table):
         table_name = table.name.lower()
@@ -123,11 +129,16 @@ def validate_sql(raw_sql: str, row_limit: int | None = None) -> ValidationResult
             if allowed_cols and col_name not in allowed_cols:
                 violations.append(f"Column not in allowlist for {only_table}: {col_name}")
 
-    # Function allowlist
-    for func in tree.find_all(exp.Anonymous):
-        # sqlglot parses unrecognized function names as Anonymous
-        if func.this and func.this.lower() not in _ALLOWED_FUNCTIONS:
-            violations.append(f"Function not in allowlist: {func.this}")
+    # Function allowlist. Check every parsed function node, not only
+    # `Anonymous` — functions such as json_extract parse to typed nodes and
+    # would otherwise bypass the allowlist.
+    for func in tree.find_all(exp.Func):
+        if isinstance(func, exp.Anonymous):
+            name = str(func.this or "").lower()
+        else:
+            name = (func.sql_name() or "").lower()
+        if name and name not in _ALLOWED_FUNCTIONS:
+            violations.append(f"Function not in allowlist: {name}")
 
     if violations:
         return ValidationResult(is_safe=False, reason="Query violates safety policy.", violations=violations)
