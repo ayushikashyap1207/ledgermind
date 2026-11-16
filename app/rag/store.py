@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import re
 from functools import lru_cache
 
@@ -8,14 +9,23 @@ from chromadb.api.models.Collection import Collection
 
 from app.core.config import settings
 from app.rag.bm25 import BM25Index
-from app.rag.embeddings import HashEmbeddingFunction
+from app.rag.embeddings import (
+    HashEmbeddingFunction,
+    SentenceTransformerEmbeddingFunction,
+)
 
 _bm25_indexes: dict[str, BM25Index] = {}
-_SAFE_TENANT_RE = re.compile(r"[^a-zA-Z0-9_-]")
+_SAFE_NAME_RE = re.compile(r"[^a-zA-Z0-9_-]")
 
 
 @lru_cache
-def get_embedding_function() -> HashEmbeddingFunction:
+def get_embedding_function():
+    if settings.embedding_backend == "sentence_transformers":
+        return SentenceTransformerEmbeddingFunction(
+            model_name=settings.embedding_model,
+            device=settings.embedding_device,
+            batch_size=settings.embedding_batch_size,
+        )
     return HashEmbeddingFunction()
 
 
@@ -30,8 +40,14 @@ def get_chroma_client() -> chromadb.ClientAPI:
 
 
 def collection_name_for_tenant(tenant_id: str) -> str:
-    safe_tenant = _SAFE_TENANT_RE.sub("_", tenant_id)
-    return f"{settings.chroma_collection_name}_{safe_tenant}"
+    safe_tenant = _SAFE_NAME_RE.sub("_", tenant_id)
+    embedding_suffix = get_embedding_function().collection_name_suffix()
+    safe_embedding = _SAFE_NAME_RE.sub("_", embedding_suffix)
+    name = f"{settings.chroma_collection_name}_{safe_tenant}_{safe_embedding}"
+    if len(name) > 63:
+        digest = hashlib.sha1(name.encode("utf-8")).hexdigest()[:8]
+        name = f"{name[:54]}_{digest}"
+    return name
 
 
 @lru_cache

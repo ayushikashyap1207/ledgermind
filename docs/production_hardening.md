@@ -94,5 +94,5 @@ so partial runs are not mistaken for failures.
 - Immutable audit storage, retention policy, and SIEM export.
 - TLS termination, secrets manager, and encrypted backups.
 - A valid full eval on the configured `gpt-oss-20b` model once quota resets.
-- Real embeddings + cross-encoder reranker.
+- Cross-encoder reranker over the BGE-small + BM25 candidate set.
 - Frontend and human-in-the-loop review for conflicts.

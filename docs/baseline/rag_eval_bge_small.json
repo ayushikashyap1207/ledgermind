@@ -1,0 +1,175 @@
+{
+  "phase": "phase2_rag",
+  "chunk_size": 700,
+  "chunk_overlap": 120,
+  "chunk_count": 5,
+  "passed": 15,
+  "total": 15,
+  "results": [
+    {
+      "id": "r01",
+      "question": "What is the company procurement approval threshold?",
+      "expected_source": "procurement_policy.txt",
+      "top_sources": [
+        "procurement_policy.txt",
+        "risk_committee_memo.txt",
+        "expense_policy.txt"
+      ],
+      "passed": true
+    },
+    {
+      "id": "r02",
+      "question": "How many signatures are required for contracts above 250k?",
+      "expected_source": "procurement_policy.txt",
+      "top_sources": [
+        "procurement_policy.txt",
+        "earnings_call_q2_2026.txt",
+        "expense_policy.txt"
+      ],
+      "passed": true
+    },
+    {
+      "id": "r03",
+      "question": "What expense category must include original receipts?",
+      "expected_source": "expense_policy.txt",
+      "top_sources": [
+        "expense_policy.txt",
+        "vendor_msa_excerpt.txt",
+        "procurement_policy.txt"
+      ],
+      "passed": true
+    },
+    {
+      "id": "r04",
+      "question": "What is the reimbursement SLA for approved expenses?",
+      "expected_source": "expense_policy.txt",
+      "top_sources": [
+        "expense_policy.txt",
+        "procurement_policy.txt",
+        "vendor_msa_excerpt.txt"
+      ],
+      "passed": true
+    },
+    {
+      "id": "r05",
+      "question": "What is the announced gross margin target for FY2026?",
+      "expected_source": "earnings_call_q2_2026.txt",
+      "top_sources": [
+        "earnings_call_q2_2026.txt",
+        "procurement_policy.txt",
+        "risk_committee_memo.txt"
+      ],
+      "passed": true
+    },
+    {
+      "id": "r06",
+      "question": "Which region showed fastest ARR growth in the latest call?",
+      "expected_source": "earnings_call_q2_2026.txt",
+      "top_sources": [
+        "earnings_call_q2_2026.txt",
+        "risk_committee_memo.txt",
+        "vendor_msa_excerpt.txt"
+      ],
+      "passed": true
+    },
+    {
+      "id": "r07",
+      "question": "When are vendor invoices due under Net terms in the MSA?",
+      "expected_source": "vendor_msa_excerpt.txt",
+      "top_sources": [
+        "vendor_msa_excerpt.txt",
+        "procurement_policy.txt",
+        "risk_committee_memo.txt"
+      ],
+      "passed": true
+    },
+    {
+      "id": "r08",
+      "question": "What happens if invoice disputes are not raised in time?",
+      "expected_source": "vendor_msa_excerpt.txt",
+      "top_sources": [
+        "vendor_msa_excerpt.txt",
+        "expense_policy.txt",
+        "procurement_policy.txt"
+      ],
+      "passed": true
+    },
+    {
+      "id": "r09",
+      "question": "What concentration limit exists for cloud infrastructure spend?",
+      "expected_source": "risk_committee_memo.txt",
+      "top_sources": [
+        "risk_committee_memo.txt",
+        "earnings_call_q2_2026.txt",
+        "procurement_policy.txt"
+      ],
+      "passed": true
+    },
+    {
+      "id": "r10",
+      "question": "What cap applies to unresolved audit exceptions per quarter?",
+      "expected_source": "risk_committee_memo.txt",
+      "top_sources": [
+        "risk_committee_memo.txt",
+        "vendor_msa_excerpt.txt",
+        "earnings_call_q2_2026.txt"
+      ],
+      "passed": true
+    },
+    {
+      "id": "r11",
+      "question": "Who approves emergency purchases over 50k?",
+      "expected_source": "procurement_policy.txt",
+      "top_sources": [
+        "procurement_policy.txt",
+        "earnings_call_q2_2026.txt",
+        "expense_policy.txt"
+      ],
+      "passed": true
+    },
+    {
+      "id": "r12",
+      "question": "By when should managers approve expense reports?",
+      "expected_source": "expense_policy.txt",
+      "top_sources": [
+        "expense_policy.txt",
+        "procurement_policy.txt",
+        "earnings_call_q2_2026.txt"
+      ],
+      "passed": true
+    },
+    {
+      "id": "r13",
+      "question": "What retention expectation is stated for enterprise customers?",
+      "expected_source": "earnings_call_q2_2026.txt",
+      "top_sources": [
+        "earnings_call_q2_2026.txt",
+        "risk_committee_memo.txt",
+        "vendor_msa_excerpt.txt"
+      ],
+      "passed": true
+    },
+    {
+      "id": "r14",
+      "question": "What is the late payment fee percentage in vendor terms?",
+      "expected_source": "vendor_msa_excerpt.txt",
+      "top_sources": [
+        "vendor_msa_excerpt.txt",
+        "procurement_policy.txt",
+        "risk_committee_memo.txt"
+      ],
+      "passed": true
+    },
+    {
+      "id": "r15",
+      "question": "What is the maximum single-vendor exposure threshold?",
+      "expected_source": "risk_committee_memo.txt",
+      "top_sources": [
+        "risk_committee_memo.txt",
+        "procurement_policy.txt",
+        "vendor_msa_excerpt.txt"
+      ],
+      "passed": true
+    }
+  ]
+}

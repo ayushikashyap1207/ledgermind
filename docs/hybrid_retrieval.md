@@ -83,6 +83,7 @@ re-run is still pending quota.
 Raw artifacts:
 
 - `docs/baseline/rag_eval_hybrid.json`
+- `docs/baseline/rag_eval_bge_small.json`
 - `docs/baseline/full_eval_hybrid_gpt120b.json`
 
 ## Caveats
@@ -90,19 +91,19 @@ Raw artifacts:
 - The BM25 index is in-process and rebuilds from all chunks. That is fine for
   this corpus; a production corpus should use OpenSearch, Postgres full-text
   search, or a sparse-vector store with incremental indexing.
-- Hash embeddings are still weak. BM25 fixes exact-term misses, but semantic
-  paraphrases need real embeddings (for example `text-embedding-3` or a local
-  sentence-transformer) plus a cross-encoder reranker.
-- SQL correctness is still 11/15. The remaining failures are the "overdue"
-  business definition, unqualified joins, and strict row/column comparison.
-- Latency remains provider-bound (~5–7 s p50/mean). Classification,
-  decomposition, SQL generation, and the judge are separate LLM calls.
+- Dense retrieval now uses `BAAI/bge-small-en-v1.5` with the BGE query
+  instruction. The hash embedding remains only as an offline/test fallback.
+  A cross-encoder reranker is still the next retrieval upgrade.
+- SQL correctness is 15/15 on Qwen 27b after the hardening pass; the 20b
+  re-run is pending quota.
+- Latency is provider-bound. The pre-synthesis hybrid run was ~5–7 s
+  p50/mean; grounding synthesis adds another LLM call (~17 s p50 on 120b),
+  with a deterministic fast path for single-row SQL answers.
 
 ## Next
 
 1. Re-run the full suite on `gpt-oss-20b` when its daily quota resets, for an
    apples-to-apples result.
-2. Add real embeddings + a cross-encoder reranker.
-3. Fix the SQL definition and join failures; add an execution-guided repair
-   attempt.
-4. Add retry/backoff and a per-run token budget for evals.
+2. Add a cross-encoder reranker over the BGE + BM25 candidate set.
+3. Validate on real filings and table-heavy PDFs.
+4. Add a CI regression gate and per-run token budget.

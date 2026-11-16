@@ -75,7 +75,10 @@ class Settings(BaseSettings):
     chroma_host: str = "localhost"
     chroma_port: int = 8001
     chroma_use_http: bool = False
-    embedding_model: str = "text-embedding-3-small"
+    embedding_backend: Literal["hash", "sentence_transformers"] = "sentence_transformers"
+    embedding_model: str = "BAAI/bge-small-en-v1.5"
+    embedding_device: str = "cpu"
+    embedding_batch_size: int = 32
     chunk_size: int = 800
     chunk_overlap: int = 150
     retrieval_k: int = 8

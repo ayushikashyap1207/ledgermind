@@ -83,8 +83,10 @@ def test_role_hierarchy_is_ordered():
 
 
 def test_tenant_collections_are_separate():
-    assert collection_name_for_tenant("alpha") != collection_name_for_tenant("beta")
-    assert collection_name_for_tenant("alpha") == "ledgermind_docs_alpha"
+    alpha = collection_name_for_tenant("alpha")
+    beta = collection_name_for_tenant("beta")
+    assert alpha != beta
+    assert alpha.startswith("ledgermind_docs_alpha_")
 
 
 def test_viewer_key_cannot_call_admin_endpoint(monkeypatch):

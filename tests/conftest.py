@@ -8,6 +8,10 @@ import os
 
 import pytest
 
+# Keep the test suite fast, deterministic, and offline unless a test
+# explicitly exercises the sentence-transformers path.
+os.environ["EMBEDDING_BACKEND"] = "hash"
+
 from app.core.config import settings
 
 

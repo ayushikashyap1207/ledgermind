@@ -130,9 +130,11 @@ def retrieve(
     reranked with lexical+dense features, then diversified with MMR."""
     collection = get_collection(tenant_id)
     candidate_n = max(settings.retrieval_k, top_k * 3)
+    embedding_function = get_embedding_function()
+    query_embedding = embedding_function.embed_query(question)
 
     dense = collection.query(
-        query_texts=[question],
+        query_embeddings=[query_embedding],
         n_results=candidate_n,
         include=["documents", "metadatas", "distances"],
     )
@@ -172,7 +174,6 @@ def retrieve(
     if not ids:
         return []
 
-    query_embedding = get_embedding_function().embed_text(question)
     dense_scores = {
         doc_id: _cosine(query_embedding, embedding)
         for doc_id, embedding in emb_by_id.items()
