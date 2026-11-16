@@ -91,9 +91,9 @@ Raw artifacts:
 - The BM25 index is in-process and rebuilds from all chunks. That is fine for
   this corpus; a production corpus should use OpenSearch, Postgres full-text
   search, or a sparse-vector store with incremental indexing.
-- Dense retrieval now uses `BAAI/bge-small-en-v1.5` with the BGE query
-  instruction. The hash embedding remains only as an offline/test fallback.
-  A cross-encoder reranker is still the next retrieval upgrade.
+- Dense retrieval uses `BAAI/bge-small-en-v1.5` with the BGE query instruction,
+  then a `cross-encoder/ms-marco-MiniLM-L-6-v2` reranker scores the fused
+  candidate set. The hash embedding remains only as an offline/test fallback.
 - SQL correctness is 15/15 on Qwen 27b after the hardening pass; the 20b
   re-run is pending quota.
 - Latency is provider-bound. The pre-synthesis hybrid run was ~5–7 s
@@ -104,6 +104,6 @@ Raw artifacts:
 
 1. Re-run the full suite on `gpt-oss-20b` when its daily quota resets, for an
    apples-to-apples result.
-2. Add a cross-encoder reranker over the BGE + BM25 candidate set.
-3. Validate on real filings and table-heavy PDFs.
-4. Add a CI regression gate and per-run token budget.
+2. Validate on real filings and table-heavy PDFs.
+3. Add a CI regression gate and per-run token budget.
+4. Evaluate a larger BGE reranker against the current MiniLM cross-encoder.

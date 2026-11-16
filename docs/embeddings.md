@@ -94,5 +94,5 @@ Raw artifact: `docs/baseline/rag_eval_bge_small.json`.
 
 1. Evaluate `bge-base-en-v1.5` against the current BGE-small on the same
    retrieval and full-end-to-end suites.
-2. Add a cross-encoder reranker over the hybrid candidate set.
+2. Evaluate a larger BGE reranker against the current MiniLM cross-encoder.
 3. Replace the synthetic corpus with real filings and table-heavy invoices.

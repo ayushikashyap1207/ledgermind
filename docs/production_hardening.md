@@ -81,7 +81,7 @@ so partial runs are not mistaken for failures.
 
 ## Verification
 
-- `pytest`: **81/81 passed**
+- `pytest`: **91/91 passed**
 - App health: `app`, `database`, `chroma` all `ok`
 - SQL safety tests include timeout, row cap, star rejection, and function
   allowlist bypass cases.
@@ -94,5 +94,5 @@ so partial runs are not mistaken for failures.
 - Immutable audit storage, retention policy, and SIEM export.
 - TLS termination, secrets manager, and encrypted backups.
 - A valid full eval on the configured `gpt-oss-20b` model once quota resets.
-- Cross-encoder reranker over the BGE-small + BM25 candidate set.
+- A larger real-document corpus and table-aware extraction (BGE + cross-encoder are integrated).
 - Frontend and human-in-the-loop review for conflicts.

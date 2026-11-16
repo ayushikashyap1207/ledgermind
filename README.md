@@ -89,12 +89,13 @@ The router classifies each question as `needs_sql`, `needs_rag`, or `needs_both`
 | Structured data | **PostgreSQL** (SQLite for local dev) | A real, production-grade RDBMS so the Text-to-SQL layer is tested against realistic constraints — foreign keys, types, a read-only role — not a toy in-memory table. |
 | Vector store | **ChromaDB** | Lightweight, embeddable, and easy to run as its own Docker service — no need for a hosted vector DB to prototype a real RAG pipeline. |
 | Embeddings | **BAAI/bge-small-en-v1.5** via `sentence-transformers` | Local 384-dim retrieval embeddings with the BGE query instruction; deterministic hash fallback for tests and offline development. |
+| Reranker | **cross-encoder/ms-marco-MiniLM-L-6-v2** | Reranks the fused BGE + BM25 candidate set; ~50 ms per query after model warmup on the M2. |
 | Orchestration | **LangChain** (chains) | Handles the prompt templates, LLM calls, and retrieval glue. LangGraph is deliberately *not* used by default — it's only added if the router genuinely needs multi-step state or backtracking, since a classifier + two chains is a perfectly good router on its own. |
 | Evaluation & tracing | **LangSmith** | Every chain (router, SQL generation, retrieval, synthesis) is traced so a run can be inspected step by step, not just judged by its final output. |
 | LLM providers | **Anthropic + OpenAI + Groq + Ollama**, behind one interface | No vendor lock-in — the provider is a config value, not a code path, so the system can be benchmarked, swapped across models, or run fully locally. |
 | Identity & audit | **Hashed API keys + SQLAlchemy audit tables** | Per-user roles, tenant-scoped retrieval, revocable keys, and durable request audit events without logging financial content. |
 | Containerization | **Docker + docker-compose** | The app, Postgres, and Chroma run as separate services so the whole system reproduces identically from a fresh clone. |
-| Testing | **pytest** | **81 tests** cover SQL safety/execution, retrieval, routing, decomposition, synthesis, identity, tenancy, and audit. |
+| Testing | **pytest** | **91 tests** cover SQL safety/execution, retrieval, reranking, routing, decomposition, synthesis, identity, tenancy, and audit. |
 
 ## How it works
 
@@ -173,10 +174,10 @@ latency. Every run produces a JSON report; LangSmith tracing is optional.
 | Citation correctness | **30/30 (100%)** | `gpt-oss-120b` full run |
 | Answer faithfulness | **28/30 (93.3%)** | `gpt-oss-120b` full run* |
 | SQL execution correctness | **15/15 (100%)** | Qwen 27b after SQL hardening† |
-| Retrieval recall@3 | **15/15 (100%)** | Hybrid BM25 + BGE-small dense |
+| Retrieval recall@3 | **15/15 (100%)** | Hybrid BM25 + BGE-small + cross-encoder |
 | Router-only eval | **10/10** | Route + citation check |
 | End-to-end latency | **17.2s p50** | `gpt-oss-120b` synthesis run |
-| Test suite | **81/81** | `pytest` |
+| Test suite | **91/91** | `pytest` |
 
 \* The two faithfulness misses were traced to the judge receiving file
 references instead of the `[D#]`/`[S#]` evidence IDs used by the answer. That
@@ -234,7 +235,7 @@ user keys are issued through `/admin/api-keys`; see
 
 - Text-to-SQL accuracy degrades on schema questions outside the allowlisted tables/columns — these are rejected by design rather than answered incorrectly.
 - The current evaluation mixes models: 15/15 SQL is Qwen 27b, while routing/citation/faithfulness are 120b. The configured 20b full run is pending daily quota; do not treat these as a single apples-to-apples benchmark.
-- RAG now uses BGE-small embeddings, but is still validated on a small synthetic corpus. Real 10-Ks, invoice tables, and scanned PDFs need table-aware extraction and a cross-encoder reranker.
+- RAG now uses BGE-small embeddings plus a cross-encoder reranker, but is still validated on a small synthetic corpus. Real 10-Ks, invoice tables, and scanned PDFs need table-aware extraction and a real filing corpus.
 - Synthesis adds latency (~17s p50 on 120b); single-row SQL answers use a fast deterministic path, but complex questions still pay for an LLM round trip.
 - LLM-as-judge faithfulness scoring is a proxy, not ground truth — the rubric and evidence are logged for auditability.
 - `needs_both` conflicts are surfaced but do not yet block an answer or trigger human review.
@@ -244,7 +245,7 @@ user keys are issued through `/admin/api-keys`; see
 
 - Re-run the full suite on `gpt-oss-20b` and gate CI on routing, citation, SQL, and faithfulness regressions.
 - Expand the golden set to 300–500 real Q&A pairs with real filings, invoices, and tables.
-- Add a cross-encoder reranker and table-aware ingestion; BGE-small embeddings are now integrated.
+- Add table-aware ingestion and a real filing corpus; BGE-small embeddings and the cross-encoder reranker are now integrated.
 - Add SSO/OIDC, per-tenant SQL isolation/RLS, and an immutable audit export.
 - Reduce synthesis latency and add a frontend with human-in-the-loop review for conflicts.
 - Cost/latency comparisons across the four pluggable LLM providers.

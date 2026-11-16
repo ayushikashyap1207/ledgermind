@@ -13,6 +13,7 @@ from app.rag.embeddings import (
     HashEmbeddingFunction,
     SentenceTransformerEmbeddingFunction,
 )
+from app.rag.reranker import CrossEncoderReranker
 
 _bm25_indexes: dict[str, BM25Index] = {}
 _SAFE_NAME_RE = re.compile(r"[^a-zA-Z0-9_-]")
@@ -37,6 +38,17 @@ def get_chroma_client() -> chromadb.ClientAPI:
     # Use local persistent client by default; this works even when Docker
     # is unavailable but keeps the same collection/query interface.
     return chromadb.PersistentClient(path=settings.chroma_persist_dir)
+
+
+@lru_cache
+def get_reranker() -> CrossEncoderReranker | None:
+    if not settings.reranker_enabled:
+        return None
+    return CrossEncoderReranker(
+        model_name=settings.reranker_model,
+        device=settings.reranker_device,
+        batch_size=settings.reranker_batch_size,
+    )
 
 
 def collection_name_for_tenant(tenant_id: str) -> str:

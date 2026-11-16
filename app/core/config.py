@@ -79,6 +79,10 @@ class Settings(BaseSettings):
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     embedding_device: str = "cpu"
     embedding_batch_size: int = 32
+    reranker_enabled: bool = True
+    reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    reranker_device: str = "cpu"
+    reranker_batch_size: int = 16
     chunk_size: int = 800
     chunk_overlap: int = 150
     retrieval_k: int = 8

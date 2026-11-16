@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -10,13 +11,17 @@ from app.core.config import settings
 from app.core.tracing import trace_chain
 from app.rag.chunker import split_into_chunks
 from app.rag.hybrid import mmr_select, normalize_scores, reciprocal_rank_fusion
+from app.rag.reranker import combine_rerank_scores
 from app.rag.store import (
     get_bm25_index,
     get_collection,
     get_embedding_function,
+    get_reranker,
     reset_collection,
     upsert_chunks,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -193,13 +198,42 @@ def retrieve(
         for doc_id in ids
     }
 
-    selected = mmr_select(
-        candidate_ids=ids,
-        relevance=relevance,
-        embeddings=emb_by_id,
-        top_k=min(top_k, len(ids)),
-        lambda_=0.85,
-    )
+    reranker = get_reranker()
+    if reranker is not None:
+        try:
+            cross_scores = reranker.score(
+                question, [doc_by_id[doc_id] for doc_id in ids]
+            )
+            if len(cross_scores) != len(ids):
+                raise RuntimeError(
+                    f"reranker returned {len(cross_scores)} scores for {len(ids)} candidates"
+                )
+            relevance = combine_rerank_scores(
+                base_scores=relevance,
+                cross_scores=dict(zip(ids, cross_scores)),
+            )
+            selected = sorted(
+                ids, key=lambda doc_id: (-relevance[doc_id], doc_id)
+            )[: min(top_k, len(ids))]
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(
+                "Cross-encoder rerank failed; falling back to hybrid MMR: %s", exc
+            )
+            selected = mmr_select(
+                candidate_ids=ids,
+                relevance=relevance,
+                embeddings=emb_by_id,
+                top_k=min(top_k, len(ids)),
+                lambda_=0.85,
+            )
+    else:
+        selected = mmr_select(
+            candidate_ids=ids,
+            relevance=relevance,
+            embeddings=emb_by_id,
+            top_k=min(top_k, len(ids)),
+            lambda_=0.85,
+        )
 
     ranked: list[RetrievedChunk] = []
     for doc_id in selected:
