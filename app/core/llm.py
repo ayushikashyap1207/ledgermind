@@ -113,6 +113,73 @@ class GroqClient(LLMClient):
         return resp.choices[0].message.content or ""
 
 
+class GuardrailViolation(RuntimeError):
+    """Raised when Bedrock Guardrails blocks a model response."""
+
+
+class BedrockClient(LLMClient):
+    """Amazon Bedrock Converse API, with optional Guardrails."""
+
+    def __init__(self, cfg: Settings, client=None):
+        self._model = cfg.llm_model
+        self._max_tokens = cfg.llm_max_tokens
+        self._temperature = cfg.llm_temperature
+        self._guardrail_enabled = bool(
+            cfg.bedrock_guardrail_enabled and cfg.bedrock_guardrail_id
+        )
+        self._guardrail_id = cfg.bedrock_guardrail_id
+        self._guardrail_version = cfg.bedrock_guardrail_version
+
+        if client is not None:
+            self._client = client
+        else:
+            try:
+                import boto3
+            except ImportError as exc:  # pragma: no cover - dependency optional
+                raise RuntimeError(
+                    "Bedrock is selected but boto3 is not installed. "
+                    "Run: pip install -r requirements-aws.txt"
+                ) from exc
+            session = boto3.Session(
+                profile_name=cfg.aws_profile or None,
+                region_name=cfg.aws_region,
+            )
+            self._client = session.client(
+                "bedrock-runtime",
+                endpoint_url=cfg.aws_endpoint_url or None,
+            )
+
+    def complete(self, system: str, user: str) -> str:
+        kwargs = {
+            "modelId": self._model,
+            "messages": [{"role": "user", "content": [{"text": user}]}],
+            "system": [{"text": system}],
+            "inferenceConfig": {
+                "maxTokens": self._max_tokens,
+                "temperature": self._temperature,
+            },
+        }
+        if self._guardrail_enabled:
+            kwargs["guardrailConfig"] = {
+                "guardrailIdentifier": self._guardrail_id,
+                "guardrailVersion": self._guardrail_version,
+            }
+
+        response = self._client.converse(**kwargs)
+
+        if response.get("stopReason") == "guardrail_intervened":
+            raise GuardrailViolation(
+                "The response was blocked by the configured Bedrock Guardrail."
+            )
+
+        content = response.get("output", {}).get("message", {}).get("content", [])
+        return "".join(
+            block.get("text", "")
+            for block in content
+            if isinstance(block, dict)
+        )
+
+
 class RetryingLLMClient(LLMClient):
     """Retry transient provider failures with exponential backoff."""
 
@@ -139,6 +206,8 @@ class RetryingLLMClient(LLMClient):
 
 
 def _is_retryable(exc: Exception) -> bool:
+    if isinstance(exc, GuardrailViolation):
+        return False
     status = getattr(exc, "status_code", None)
     if status in {408, 409, 429, 500, 502, 503, 504}:
         return True
@@ -154,6 +223,7 @@ _PROVIDER_MAP: dict[LLMProvider, type[LLMClient]] = {
     LLMProvider.OPENAI: OpenAIClient,
     LLMProvider.GROQ: GroqClient,
     LLMProvider.OLLAMA: OllamaClient,
+    LLMProvider.BEDROCK: BedrockClient,
 }
 
 

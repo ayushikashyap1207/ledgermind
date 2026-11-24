@@ -2,7 +2,7 @@
 
 **A hybrid enterprise financial agent that answers natural-language questions by reasoning over both unstructured documents (10-Ks, earnings calls, invoices, policy docs) and structured data (a transactional ledger/database) — and returns one grounded, cited answer.**
 
-The current backend includes an LLM router, `needs_both` query decomposition, hybrid BM25 + dense retrieval, claim-level citation verification, read-only SQL with execution-guided repair, tenant-scoped document retrieval, role-based API access, and a durable audit trail.
+The backend includes an LLM router, `needs_both` query decomposition, hybrid BM25 + dense retrieval, claim-level citation verification, read-only SQL with execution-guided repair, tenant-scoped document retrieval, role-based API access, and a durable audit trail. AWS is optional: Amazon Bedrock, Bedrock Guardrails, and S3 ingestion can be enabled without moving the local/Docker core.
 
 ![LedgerMind API Docs](docs/ledgermind-api.png)
 *The FastAPI/Swagger interface for LedgerMind's query, ingest, evaluation, admin, and health endpoints.*
@@ -18,6 +18,7 @@ The current backend includes an LLM router, `needs_both` query decomposition, hy
 - [Tech stack — and why](#tech-stack--and-why)
 - [How it works](#how-it-works)
 - [API reference](#api-reference)
+- [Optional AWS integration](#optional-aws-integration)
 - [Project structure](#project-structure)
 - [Build plan / phases](#build-plan--phases)
 - [Evaluation](#evaluation)
@@ -90,12 +91,13 @@ The router classifies each question as `needs_sql`, `needs_rag`, or `needs_both`
 | Vector store | **ChromaDB** | Lightweight, embeddable, and easy to run as its own Docker service — no need for a hosted vector DB to prototype a real RAG pipeline. |
 | Embeddings | **BAAI/bge-small-en-v1.5** via `sentence-transformers` | Local 384-dim retrieval embeddings with the BGE query instruction; deterministic hash fallback for tests and offline development. |
 | Reranker | **cross-encoder/ms-marco-MiniLM-L-6-v2** | Reranks the fused BGE + BM25 candidate set; ~50 ms per query after model warmup on the M2. |
+| AWS (optional) | **Bedrock + S3 + Guardrails** | Optional LLM provider, document source, and output-safety layer without moving the core stack to AWS. |
 | Orchestration | **LangChain** (chains) | Handles the prompt templates, LLM calls, and retrieval glue. LangGraph is deliberately *not* used by default — it's only added if the router genuinely needs multi-step state or backtracking, since a classifier + two chains is a perfectly good router on its own. |
 | Evaluation & tracing | **LangSmith** | Every chain (router, SQL generation, retrieval, synthesis) is traced so a run can be inspected step by step, not just judged by its final output. |
 | LLM providers | **Anthropic + OpenAI + Groq + Ollama**, behind one interface | No vendor lock-in — the provider is a config value, not a code path, so the system can be benchmarked, swapped across models, or run fully locally. |
 | Identity & audit | **Hashed API keys + SQLAlchemy audit tables** | Per-user roles, tenant-scoped retrieval, revocable keys, and durable request audit events without logging financial content. |
 | Containerization | **Docker + docker-compose** | The app, Postgres, and Chroma run as separate services so the whole system reproduces identically from a fresh clone. |
-| Testing | **pytest** | **91 tests** cover SQL safety/execution, retrieval, reranking, routing, decomposition, synthesis, identity, tenancy, and audit. |
+| Testing | **pytest** | **98 tests** cover SQL safety/execution, retrieval, reranking, routing, decomposition, synthesis, identity, tenancy, audit, Bedrock, and S3 ingestion. |
 
 ## How it works
 
@@ -117,7 +119,8 @@ The router classifies each question as `needs_sql`, `needs_rag`, or `needs_both`
 |---|---|---|
 | `GET` | `/health` | Health check for the app, Postgres, and Chroma. |
 | `POST` | `/query` | Ask a natural-language question; returns a grounded, cited answer. |
-| `POST` | `/ingest` | Ingest unstructured documents into the RAG pipeline. |
+| `POST` | `/ingest` | Ingest local unstructured documents into the RAG pipeline. |
+| `POST` | `/ingest/s3` | Ingest `.txt`/`.md`/`.pdf` documents from an S3 prefix. |
 | `POST` | `/ingest/sql` | Bulk-load structured data into the ledger schema. |
 | `POST` | `/eval/run` | Run the evaluation suite and produce a metrics report. |
 | `POST` | `/admin/tenants` | Create a tenant (admin only). |
@@ -133,6 +136,22 @@ restricted to the default tenant until a tenant has its own isolated database.
 Every request receives an `x-request-id` and an audit event containing tenant,
 user, role, method, path, status, duration, and a question hash — never question
 text, documents, SQL, or keys. See `docs/identity_and_tenants.md`.
+
+## Optional AWS integration
+
+The core RAG stack runs locally by default. AWS can be enabled selectively:
+
+- **Amazon Bedrock** — `LLM_PROVIDER=bedrock` uses the Converse API and the
+  standard boto3 credential chain.
+- **Bedrock Guardrails** — attach a guardrail to every Bedrock call; blocked
+  responses become a safe refusal instead of an unsupported answer.
+- **Amazon S3 ingestion** — `POST /ingest/s3` imports `.txt`/`.md`/`.pdf`
+  objects from a bucket/prefix, preserving the `s3://` URI, version ID, and
+  tenant in chunk metadata.
+
+Install the optional dependencies with `pip install -r requirements-aws.txt`.
+See [`docs/aws_integration.md`](docs/aws_integration.md) for IAM policies,
+configuration, and limitations.
 
 ## Project structure
 
@@ -177,7 +196,7 @@ latency. Every run produces a JSON report; LangSmith tracing is optional.
 | Retrieval recall@3 | **15/15 (100%)** | Hybrid BM25 + BGE-small + cross-encoder |
 | Router-only eval | **10/10** | Route + citation check |
 | End-to-end latency | **17.2s p50** | `gpt-oss-120b` synthesis run |
-| Test suite | **91/91** | `pytest` |
+| Test suite | **98/98** | `pytest` |
 
 \* The two faithfulness misses were traced to the judge receiving file
 references instead of the `[D#]`/`[S#]` evidence IDs used by the answer. That
@@ -217,7 +236,9 @@ docker-compose up
 
 The first `sentence-transformers` run downloads `BAAI/bge-small-en-v1.5`
 (about 130 MB). Set `EMBEDDING_BACKEND=hash` for a fully offline, lower-quality
-fallback.
+fallback. For the optional AWS adapters, run
+`pip install -r requirements-aws.txt` and configure `AWS_REGION` / Bedrock
+model access.
 
 Once the stack is healthy (`GET /health` returns 200 from the app, Postgres, and Chroma), try:
 
@@ -240,6 +261,7 @@ user keys are issued through `/admin/api-keys`; see
 - LLM-as-judge faithfulness scoring is a proxy, not ground truth — the rubric and evidence are logged for auditability.
 - `needs_both` conflicts are surfaced but do not yet block an answer or trigger human review.
 - SSO/OIDC, per-tenant SQL databases/row-level security, immutable audit storage, TLS, and a secrets manager are still pending.
+- AWS support is optional and tested with fake clients; CI does not require AWS credentials. S3 ingestion is synchronous, and Textract/OCR, S3 event/SQS workers, and Cognito are not implemented.
 
 ## Roadmap
 
@@ -248,7 +270,8 @@ user keys are issued through `/admin/api-keys`; see
 - Add table-aware ingestion and a real filing corpus; BGE-small embeddings and the cross-encoder reranker are now integrated.
 - Add SSO/OIDC, per-tenant SQL isolation/RLS, and an immutable audit export.
 - Reduce synthesis latency and add a frontend with human-in-the-loop review for conflicts.
-- Cost/latency comparisons across the four pluggable LLM providers.
+- Optional AWS depth: S3 event/SQS ingestion, Textract table extraction, and Guardrail tuning.
+- Cost/latency comparisons across the pluggable LLM providers, including Bedrock.
 
 ---
 

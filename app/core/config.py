@@ -23,6 +23,7 @@ class LLMProvider(str, Enum):
     OPENAI = "openai"
     GROQ = "groq"
     OLLAMA = "ollama"
+    BEDROCK = "bedrock"
 
 
 class Settings(BaseSettings):
@@ -55,6 +56,17 @@ class Settings(BaseSettings):
     llm_max_tokens: int = 1024
     llm_max_retries: int = 2
     llm_retry_backoff_seconds: float = 0.5
+
+    # --- AWS (optional Bedrock / S3 / Guardrails adapters) ---
+    aws_region: str = "us-east-1"
+    aws_profile: str | None = None
+    aws_endpoint_url: str | None = None
+    bedrock_guardrail_enabled: bool = False
+    bedrock_guardrail_id: str | None = None
+    bedrock_guardrail_version: str = "DRAFT"
+    s3_bucket: str | None = None
+    s3_prefix: str = ""
+    s3_max_object_bytes: int = 20_000_000
 
     # --- Structured data (Text-to-SQL) ---
     # sqlite for local dev per spec; postgres in docker-compose / production.
@@ -109,6 +121,7 @@ class Settings(BaseSettings):
             LLMProvider.OPENAI: self.openai_api_key,
             LLMProvider.GROQ: self.groq_api_key,
             LLMProvider.OLLAMA: "ollama",  # local server does not require a key
+            LLMProvider.BEDROCK: "aws-iam",  # credential chain / task role
         }[self.llm_provider]
 
 

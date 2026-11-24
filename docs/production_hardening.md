@@ -81,7 +81,7 @@ so partial runs are not mistaken for failures.
 
 ## Verification
 
-- `pytest`: **91/91 passed**
+- `pytest`: **98/98 passed**
 - App health: `app`, `database`, `chroma` all `ok`
 - SQL safety tests include timeout, row cap, star rejection, and function
   allowlist bypass cases.

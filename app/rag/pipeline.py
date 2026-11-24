@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from pypdf import PdfReader
@@ -42,6 +42,13 @@ class IngestionReport:
     seconds: float
 
 
+@dataclass
+class DocumentInput:
+    source: str
+    text: str
+    metadata: dict = field(default_factory=dict)
+
+
 def _read_text_file(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
@@ -75,18 +82,21 @@ def _cosine(a: list[float], b: list[float]) -> float:
 
 
 @trace_chain("rag_ingest")
-def ingest_documents(
-    paths: list[str],
+def ingest_text_records(
+    records: list[DocumentInput],
     chunk_size: int | None = None,
     chunk_overlap: int | None = None,
     reset: bool = False,
     tenant_id: str = "default",
 ) -> IngestionReport:
+    """Chunk and upsert already-extracted documents.
+
+    Shared by local-file ingestion and the optional S3 loader.
+    """
     start = time.perf_counter()
     chunk_size = chunk_size or settings.chunk_size
     chunk_overlap = chunk_overlap if chunk_overlap is not None else settings.chunk_overlap
 
-    files = _iter_supported_files([Path(p) for p in paths])
     if reset:
         reset_collection(tenant_id)
 
@@ -94,10 +104,11 @@ def ingest_documents(
     docs: list[str] = []
     metas: list[dict] = []
 
-    for file in files:
-        raw_text = _read_document(file)
-        source = str(file)
-        chunks = split_into_chunks(raw_text, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+    for record in records:
+        source = record.source
+        chunks = split_into_chunks(
+            record.text, chunk_size=chunk_size, chunk_overlap=chunk_overlap
+        )
 
         for idx, chunk in enumerate(chunks):
             chunk_id = f"{source}::chunk-{idx}"
@@ -110,6 +121,7 @@ def ingest_documents(
                     "start_char": chunk.start_char,
                     "end_char": chunk.end_char,
                     "tenant_id": tenant_id,
+                    **record.metadata,
                 }
             )
 
@@ -119,11 +131,31 @@ def ingest_documents(
         )
 
     return IngestionReport(
-        files=len(files),
+        files=len(records),
         chunks=len(ids),
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
         seconds=round(time.perf_counter() - start, 3),
+    )
+
+
+def ingest_documents(
+    paths: list[str],
+    chunk_size: int | None = None,
+    chunk_overlap: int | None = None,
+    reset: bool = False,
+    tenant_id: str = "default",
+) -> IngestionReport:
+    files = _iter_supported_files([Path(p) for p in paths])
+    records = [
+        DocumentInput(source=str(file), text=_read_document(file)) for file in files
+    ]
+    return ingest_text_records(
+        records,
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        reset=reset,
+        tenant_id=tenant_id,
     )
 
 

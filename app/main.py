@@ -18,6 +18,7 @@ from app.core.identity import (
 )
 from app.router.pipeline import answer_query
 from app.rag.pipeline import ingest_documents
+from app.rag.s3 import ingest_s3_documents
 from app.sql.db import get_engine
 from eval.full_eval import run_full_stack_eval
 from eval.rag_eval import run_rag_eval
@@ -39,6 +40,14 @@ class QueryRequest(BaseModel):
 
 class IngestRequest(BaseModel):
     paths: list[str] = Field(default_factory=lambda: ["docs/rag_corpus"])
+    chunk_size: int | None = None
+    chunk_overlap: int | None = None
+    reset: bool = True
+
+
+class S3IngestRequest(BaseModel):
+    bucket: str | None = None
+    prefix: str | None = None
     chunk_size: int | None = None
     chunk_overlap: int | None = None
     reset: bool = True
@@ -136,6 +145,31 @@ def ingest(
         tenant_id=auth.tenant_id,
     )
     return {**report.__dict__, "tenant_id": auth.tenant_id}
+
+
+@app.post("/ingest/s3")
+def ingest_s3(
+    req: S3IngestRequest,
+    auth: AuthContext = Depends(require_role("analyst")),
+) -> dict:
+    try:
+        report = ingest_s3_documents(
+            bucket=req.bucket,
+            prefix=req.prefix,
+            chunk_size=req.chunk_size,
+            chunk_overlap=req.chunk_overlap,
+            reset=req.reset,
+            tenant_id=auth.tenant_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return {
+        **report.__dict__,
+        "tenant_id": auth.tenant_id,
+        "source": "s3",
+    }
 
 
 @app.post("/ingest/sql")

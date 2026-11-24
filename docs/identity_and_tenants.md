@@ -96,7 +96,7 @@ that table and ship events to a write-once store or SIEM.
   retrieval, admin endpoints
 - `tests/test_health.py` — audit middleware and request IDs
 
-Total suite: **91 tests passing**.
+Total suite: **98 tests passing**.
 
 ## Still open
 

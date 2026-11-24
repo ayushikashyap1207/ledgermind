@@ -15,7 +15,7 @@ import re
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 
-from app.core.llm import LLMClient, get_llm
+from app.core.llm import GuardrailViolation, LLMClient, get_llm
 from app.rag.bm25 import tokenize
 from app.rag.pipeline import RetrievedChunk
 from app.sql.pipeline import SQLAnswer
@@ -70,7 +70,7 @@ class SynthesizedAnswer:
     text: str
     citations: list[dict]
     claims: list[dict] = field(default_factory=list)
-    method: str = "extractive"  # "llm" | "extractive"
+    method: str = "extractive"  # "llm" | "extractive" | "guardrail"
     insufficient_evidence: bool = False
     missing_evidence: str = ""
     conflicts: list[dict] = field(default_factory=list)
@@ -503,6 +503,16 @@ def synthesize_answer(
                 return _to_synthesized(repaired, citations)
         else:
             logger.warning("Synthesis LLM returned an unparseable response.")
+    except GuardrailViolation:
+        logger.warning("Synthesis blocked by the configured Bedrock Guardrail.")
+        return SynthesizedAnswer(
+            text="I can't provide an answer because the safety policy blocked it.",
+            citations=[],
+            claims=[],
+            method="guardrail",
+            insufficient_evidence=True,
+            missing_evidence="Blocked by the configured Bedrock Guardrail.",
+        )
     except Exception as exc:  # noqa: BLE001
         logger.warning("Synthesis LLM failed; using extractive fallback: %s", exc)
 
